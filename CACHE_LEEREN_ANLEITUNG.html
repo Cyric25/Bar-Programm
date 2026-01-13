@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser-Cache leeren - Anleitung</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
+            text-align: center;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .keyboard-key {
+            display: inline-block;
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            padding: 5px 12px;
+            font-family: monospace;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 0 3px;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        .browser-tabs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .browser-tab {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+        .browser-tab h3 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+        }
+        .check-button {
+            display: block;
+            width: 100%;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: background 0.3s;
+        }
+        .check-button:hover {
+            background: #218838;
+        }
+        .go-button {
+            background: #667eea;
+        }
+        .go-button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔧 Browser-Cache leeren</h1>
+
+        <div class="step warning">
+            <strong>⚠️ WICHTIG:</strong> Der Browser verwendet noch die alte Version der Dateien!<br>
+            Die Test-Seite funktioniert, weil sie neu ist. Die echte App braucht nur einen Cache-Reset.
+        </div>
+
+        <h2>🪟 Methode 1: Schnelle Methode (Empfohlen)</h2>
+
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Schließe ALLE Tabs mit der FOS Bar</strong><br>
+            Alle Browser-Tabs mit index.html oder manager.html schließen
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Hard Refresh</strong><br>
+            <span class="keyboard-key">STRG</span> + <span class="keyboard-key">SHIFT</span> + <span class="keyboard-key">R</span><br>
+            oder<br>
+            <span class="keyboard-key">STRG</span> + <span class="keyboard-key">F5</span>
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Wenn das nicht hilft: Cache komplett leeren</strong><br>
+            <span class="keyboard-key">STRG</span> + <span class="keyboard-key">SHIFT</span> + <span class="keyboard-key">DELETE</span>
+        </div>
+
+        <h2>🌐 Methode 2: Nach Browser</h2>
+
+        <div class="browser-tabs">
+            <div class="browser-tab">
+                <h3>Chrome / Edge</h3>
+                <p><span class="keyboard-key">STRG</span> + <span class="keyboard-key">SHIFT</span> + <span class="keyboard-key">DELETE</span></p>
+                <p>→ "Zwischengespeicherte Bilder und Dateien"</p>
+                <p>→ "Daten löschen"</p>
+            </div>
+
+            <div class="browser-tab">
+                <h3>Firefox</h3>
+                <p><span class="keyboard-key">STRG</span> + <span class="keyboard-key">SHIFT</span> + <span class="keyboard-key">ENTF</span></p>
+                <p>→ "Cache"</p>
+                <p>→ "Jetzt löschen"</p>
+            </div>
+        </div>
+
+        <h2>✅ Nach dem Cache-Leeren:</h2>
+
+        <div class="step success">
+            <span class="step-number">4</span>
+            <strong>index.html NEU öffnen</strong><br>
+            Die Hauptseite der FOS Bar neu öffnen
+        </div>
+
+        <div class="step success">
+            <span class="step-number">5</span>
+            <strong>Drücke F12</strong><br>
+            Developer Tools öffnen
+        </div>
+
+        <div class="step success">
+            <span class="step-number">6</span>
+            <strong>Gehe zum Console-Tab</strong><br>
+            Oben in den Developer Tools
+        </div>
+
+        <div class="step success">
+            <span class="step-number">7</span>
+            <strong>Klicke auf "+ Person hinzufügen"</strong><br>
+            Im Gutschriften oder Schuldbuch Tab
+        </div>
+
+        <div class="step success">
+            <span class="step-number">8</span>
+            <strong>Du solltest sehen:</strong>
+            <pre style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">showAddCreditDialog called
+Modal should now be visible</pre>
+            Und das Modal sollte sich öffnen! ✨
+        </div>
+
+        <button class="check-button go-button" onclick="window.location.href='index.html'">
+            🚀 Jetzt index.html öffnen
+        </button>
+
+        <div class="step" style="background: #e7f3ff; border-left-color: #2196F3;">
+            <strong>💡 Tipp:</strong> Wenn du Änderungen an JavaScript machst, immer Hard Refresh machen:<br>
+            <span class="keyboard-key">STRG</span> + <span class="keyboard-key">F5</span>
+        </div>
+
+        <hr style="margin: 30px 0; border: none; border-top: 2px solid #eee;">
+
+        <h2>🐛 Immer noch Probleme?</h2>
+
+        <div class="step">
+            <strong>Checke die Console auf Fehler:</strong>
+            <ol>
+                <li>F12 drücken</li>
+                <li>Console Tab öffnen</li>
+                <li>Nach roten Fehlermeldungen suchen</li>
+                <li>Screenshot machen und mir zeigen</li>
+            </ol>
+        </div>
+
+        <div class="step" style="background: #f0f0f0;">
+            <strong>🔍 Debug-Informationen:</strong>
+            <ul>
+                <li>✅ Test-Seite funktioniert (test-person-add.html)</li>
+                <li>✅ Code ist korrekt (window.showAddCreditDialog vorhanden)</li>
+                <li>✅ HTML-Struktur ist korrekt (Modals vorhanden)</li>
+                <li>⚠️ Problem: Browser lädt alte JavaScript-Version</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        console.log('Cache-Leeren Anleitung geladen');
+        console.log('Datum:', new Date().toISOString());
+    </script>
+</body>
+</html>

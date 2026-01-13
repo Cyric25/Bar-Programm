@@ -1,0 +1,112 @@
+{
+  "products": [
+    {
+      "id": "cola",
+      "name": "Cola",
+      "price": 1.50,
+      "category": "drinks"
+    },
+    {
+      "id": "fanta",
+      "name": "Fanta",
+      "price": 1.50,
+      "category": "drinks"
+    },
+    {
+      "id": "sprite",
+      "name": "Sprite",
+      "price": 1.50,
+      "category": "drinks"
+    },
+    {
+      "id": "wasser",
+      "name": "Wasser",
+      "price": 1.00,
+      "category": "drinks"
+    },
+    {
+      "id": "apfelsaft",
+      "name": "Apfelsaft",
+      "price": 1.50,
+      "category": "drinks"
+    },
+    {
+      "id": "orangensaft",
+      "name": "Orangensaft",
+      "price": 1.50,
+      "category": "drinks"
+    },
+    {
+      "id": "eistee",
+      "name": "Eistee",
+      "price": 1.50,
+      "category": "drinks"
+    },
+    {
+      "id": "energydrink",
+      "name": "Energy Drink",
+      "price": 2.00,
+      "category": "drinks"
+    },
+    {
+      "id": "bier",
+      "name": "Bier",
+      "price": 2.50,
+      "category": "alcohol"
+    },
+    {
+      "id": "radler",
+      "name": "Radler",
+      "price": 2.50,
+      "category": "alcohol"
+    },
+    {
+      "id": "wein",
+      "name": "Wein (Glas)",
+      "price": 3.00,
+      "category": "alcohol"
+    },
+    {
+      "id": "sekt",
+      "name": "Sekt (Glas)",
+      "price": 3.50,
+      "category": "alcohol"
+    },
+    {
+      "id": "chips",
+      "name": "Chips",
+      "price": 1.00,
+      "category": "snacks"
+    },
+    {
+      "id": "erdnuesse",
+      "name": "Erdnüsse",
+      "price": 1.20,
+      "category": "snacks"
+    },
+    {
+      "id": "schokolade",
+      "name": "Schokolade",
+      "price": 1.50,
+      "category": "snacks"
+    },
+    {
+      "id": "kaugummi",
+      "name": "Kaugummi",
+      "price": 0.80,
+      "category": "snacks"
+    },
+    {
+      "id": "brezel",
+      "name": "Brezel",
+      "price": 1.50,
+      "category": "snacks"
+    },
+    {
+      "id": "sandwich",
+      "name": "Sandwich",
+      "price": 2.50,
+      "category": "snacks"
+    }
+  ]
+}

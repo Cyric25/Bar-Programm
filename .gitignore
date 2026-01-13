@@ -1,0 +1,24 @@
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.backup
+*.bak
+
+# Test files (optional - uncomment if you don't want to track them)
+# test-*.html
+
+# Local settings
+.claude/settings.local.json
+
+# Node modules (if you add any build tools later)
+node_modules/
