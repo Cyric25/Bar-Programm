@@ -408,7 +408,24 @@
 
     <div id="backup-status" style="display: none;"></div>
 
-    <script src="backup.js"></script>
+    <!-- Capacitor Core & Plugins (Android) -->
+    <script type="module">
+        // Capacitor Plugins global verfügbar machen
+        if (typeof Capacitor !== 'undefined') {
+            import('https://cdn.jsdelivr.net/npm/@capacitor/filesystem@5.0.0/dist/esm/index.js').then(module => {
+                window.Capacitor = window.Capacitor || {};
+                window.Capacitor.Plugins = window.Capacitor.Plugins || {};
+                window.Capacitor.Plugins.Filesystem = module.Filesystem;
+                window.Capacitor.Plugins.Filesystem.Directory = module.Directory;
+                window.Capacitor.Plugins.Filesystem.Encoding = module.Encoding;
+            });
+            import('https://cdn.jsdelivr.net/npm/@capacitor/share@5.0.0/dist/esm/index.js').then(module => {
+                window.Capacitor.Plugins.Share = module.Share;
+            });
+        }
+    </script>
+
+    <script src="backup-android.js"></script>
     <script src="manager.js?v=1768216614788"></script>
     <script>
         // Inline tab functionality - guaranteed to work
