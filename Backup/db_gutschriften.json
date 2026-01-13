@@ -1,0 +1,177 @@
+{
+  "_metadata": {
+    "databaseName": "Gutschriften",
+    "exportDate": "2026-01-13T08:22:48.031Z",
+    "version": "2.0"
+  },
+  "fos_bar_persons": [
+    {
+      "id": "mkbdwwh3mg0s81jl2h",
+      "name": "Max Mustermann",
+      "balance": 1,
+      "transactions": [
+        {
+          "id": "mkbdwwh3ow46k5ss51e",
+          "type": "credit",
+          "amount": 0.5,
+          "timestamp": "2026-01-12T16:35:54.855Z",
+          "note": "Erstmaliges Aufladen"
+        },
+        {
+          "id": "mkbdywzzgob1i46tpj",
+          "type": "credit",
+          "amount": 1,
+          "timestamp": "2026-01-12T16:37:28.847Z",
+          "note": "Guthaben aufgeladen"
+        },
+        {
+          "id": "mkbdyzsimn4so89ynv",
+          "type": "purchase",
+          "amount": -1.5,
+          "productName": "Capuccino",
+          "timestamp": "2026-01-12T16:37:32.466Z",
+          "saleId": "mkbdyzsi22ncc14ndns"
+        },
+        {
+          "id": "mkcbo32n0gx8p0m2yzt",
+          "type": "credit",
+          "amount": 10,
+          "timestamp": "2026-01-13T08:20:50.447Z",
+          "note": "Guthaben aufgeladen"
+        },
+        {
+          "id": "mkcbocz5yzyqibonwu",
+          "type": "purchase",
+          "amount": -1,
+          "productName": "Macchiato",
+          "timestamp": "2026-01-13T08:21:03.280Z",
+          "saleId": "mkcbocz409320af7meln"
+        },
+        {
+          "id": "mkcbod2vxrre9m6oden",
+          "type": "purchase",
+          "amount": -1,
+          "productName": "Macchiato",
+          "timestamp": "2026-01-13T08:21:03.415Z",
+          "saleId": "mkcbod2vt2v42p15mx"
+        },
+        {
+          "id": "mkcbodabq4z038oipvf",
+          "type": "purchase",
+          "amount": -1.5,
+          "productName": "Capuccino",
+          "timestamp": "2026-01-13T08:21:03.683Z",
+          "saleId": "mkcbodabfywet5xevcq"
+        },
+        {
+          "id": "mkcbodej8jjcqtjdinj",
+          "type": "purchase",
+          "amount": -1.5,
+          "productName": "Capuccino",
+          "timestamp": "2026-01-13T08:21:03.835Z",
+          "saleId": "mkcbodejk6tyvyi1z8f"
+        },
+        {
+          "id": "mkcbodktov8eamjys7",
+          "type": "purchase",
+          "amount": -1,
+          "productName": "Macchiato",
+          "timestamp": "2026-01-13T08:21:04.061Z",
+          "saleId": "mkcbodkt0qcrnyohodxm"
+        },
+        {
+          "id": "mkcbodyjqvd8072ecj",
+          "type": "purchase",
+          "amount": -1,
+          "productName": "Espresso",
+          "timestamp": "2026-01-13T08:21:04.555Z",
+          "saleId": "mkcbodyjxc7xv6bzah"
+        },
+        {
+          "id": "mkcboe3crx8ahgvk1ij",
+          "type": "purchase",
+          "amount": -1,
+          "productName": "Espresso",
+          "timestamp": "2026-01-13T08:21:04.728Z",
+          "saleId": "mkcboe3cyry5qkwtw6b"
+        },
+        {
+          "id": "mkcboeb1kx62zk3z7r",
+          "type": "purchase",
+          "amount": -1,
+          "productName": "Macchiato",
+          "timestamp": "2026-01-13T08:21:05.005Z",
+          "saleId": "mkcboeb13lazu9urjrp"
+        }
+      ],
+      "createdAt": "2026-01-12T16:35:54.855Z",
+      "loyaltyCards": [
+        {
+          "id": "mkcboknro4lxatwgxy",
+          "cardTypeId": "lct_kaffekarte",
+          "currentStamps": 8,
+          "completedCards": 0,
+          "history": [
+            {
+              "timestamp": "2026-01-13T08:21:15.985Z",
+              "action": "stamp",
+              "productId": "espresso",
+              "productName": "Espresso",
+              "saleId": "mkcboms18qt0yncjuzd"
+            },
+            {
+              "timestamp": "2026-01-13T08:21:16.412Z",
+              "action": "stamp",
+              "productId": "espresso",
+              "productName": "Espresso",
+              "saleId": "mkcbon3w55v0f0r3dg4"
+            },
+            {
+              "timestamp": "2026-01-13T08:21:16.749Z",
+              "action": "stamp",
+              "productId": "macchiato",
+              "productName": "Macchiato",
+              "saleId": "mkcbond91unh8upw8py"
+            },
+            {
+              "timestamp": "2026-01-13T08:21:17.394Z",
+              "action": "stamp",
+              "productId": "macchiato",
+              "productName": "Macchiato",
+              "saleId": "mkcbonv6gzfxmk27bph"
+            },
+            {
+              "timestamp": "2026-01-13T08:21:17.523Z",
+              "action": "stamp",
+              "productId": "macchiato",
+              "productName": "Macchiato",
+              "saleId": "mkcbonyrkubsr2codo"
+            },
+            {
+              "timestamp": "2026-01-13T08:21:17.793Z",
+              "action": "stamp",
+              "productId": "espresso",
+              "productName": "Espresso",
+              "saleId": "mkcboo69cfz25nqhs8g"
+            },
+            {
+              "timestamp": "2026-01-13T08:21:19.420Z",
+              "action": "stamp",
+              "productId": "macchiato",
+              "productName": "Macchiato",
+              "saleId": "mkcbopfg84diwlfhuim"
+            },
+            {
+              "timestamp": "2026-01-13T08:21:20.718Z",
+              "action": "stamp",
+              "productId": "espresso",
+              "productName": "Espresso",
+              "saleId": "mkcboqfi9xhtawm68j"
+            }
+          ],
+          "createdAt": "2026-01-13T08:21:13.239Z"
+        }
+      ]
+    }
+  ]
+}

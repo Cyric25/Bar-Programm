@@ -504,17 +504,34 @@ function renderSalesList() {
     container.innerHTML = todaySales
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
         .map(sale => {
-            const isLoyaltyCard = sale.isFreeRedemption || sale.paymentMethod === 'stamp';
-            const loyaltyBadge = isLoyaltyCard ? '<span class="loyalty-badge">Treuekarte</span>' : '';
-            const gratisIndicator = sale.isFreeRedemption ? '<span class="gratis-badge">GRATIS</span>' : '';
+            // Bestimme Zahlungsart und Badges
+            let paymentBadge = '';
+            let saleClass = '';
+
+            if (sale.isFreeRedemption) {
+                // Gratis-Bonus durch volle Treuekarte
+                paymentBadge = '<span class="payment-badge badge-gratis">🎉 GRATIS (Treuekarte voll)</span>';
+                saleClass = 'free-sale';
+            } else if (sale.paidWithStamp || sale.paymentMethod === 'stamp') {
+                // Bezahlt mit Stempel (kein Geld)
+                paymentBadge = '<span class="payment-badge badge-stamp">✓ Stempel (0€)</span>';
+                saleClass = 'stamp-sale';
+            } else if (sale.personId) {
+                // Bezahlt mit Guthaben
+                paymentBadge = '<span class="payment-badge badge-credit">💳 Guthaben</span>';
+                saleClass = 'credit-sale';
+            } else {
+                // Bar bezahlt
+                paymentBadge = '<span class="payment-badge badge-cash">💵 Bar</span>';
+                saleClass = 'cash-sale';
+            }
 
             return `
-                <div class="sale-item ${sale.isFreeRedemption ? 'free-sale' : ''}">
+                <div class="sale-item ${saleClass}">
                     <div class="sale-time">${formatTime(sale.timestamp)}</div>
                     <div class="sale-product">
                         ${sale.productName}
-                        ${loyaltyBadge}
-                        ${gratisIndicator}
+                        ${paymentBadge}
                     </div>
                     <div class="sale-price">${formatPrice(sale.price)}</div>
                     <button class="btn-delete" onclick="deleteSale('${sale.id}')">Löschen</button>

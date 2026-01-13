@@ -1,0 +1,224 @@
+{
+  "_metadata": {
+    "databaseName": "Inventar",
+    "exportDate": "2026-01-13T08:22:48.161Z",
+    "version": "2.0"
+  },
+  "fos_bar_sales": [
+    {
+      "id": "mkcbo8kkj1sdwmo4fir",
+      "productId": "espresso",
+      "productName": "Espresso",
+      "price": 1,
+      "timestamp": "2026-01-13T08:20:57.572Z",
+      "debtorId": "mkbe2fd9qy7cm28hi8",
+      "isDebt": true
+    },
+    {
+      "id": "mkcbo8s495hs5m667ke",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 1,
+      "timestamp": "2026-01-13T08:20:57.844Z",
+      "debtorId": "mkbe2fd9qy7cm28hi8",
+      "isDebt": true
+    },
+    {
+      "id": "mkcbo91souzjpx5crv",
+      "productId": "capuccino",
+      "productName": "Capuccino",
+      "price": 1.5,
+      "timestamp": "2026-01-13T08:20:58.192Z",
+      "debtorId": "mkbe2fd9qy7cm28hi8",
+      "isDebt": true
+    },
+    {
+      "id": "mkcbo96f9syukt1zbeh",
+      "productId": "capuccino",
+      "productName": "Capuccino",
+      "price": 1.5,
+      "timestamp": "2026-01-13T08:20:58.359Z",
+      "debtorId": "mkbe2fd9qy7cm28hi8",
+      "isDebt": true
+    },
+    {
+      "id": "mkcbo9ia9mhzxq3h6hq",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 1,
+      "timestamp": "2026-01-13T08:20:58.786Z",
+      "debtorId": "mkbe2fd9qy7cm28hi8",
+      "isDebt": true
+    },
+    {
+      "id": "mkcbo9mhynhjvnh5ewi",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 1,
+      "timestamp": "2026-01-13T08:20:58.937Z",
+      "debtorId": "mkbe2fd9qy7cm28hi8",
+      "isDebt": true
+    },
+    {
+      "id": "mkcbo9tqpgq2bkihuxk",
+      "productId": "espresso",
+      "productName": "Espresso",
+      "price": 1,
+      "timestamp": "2026-01-13T08:20:59.198Z",
+      "debtorId": "mkbe2fd9qy7cm28hi8",
+      "isDebt": true
+    },
+    {
+      "id": "mkcbocz409320af7meln",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 1,
+      "timestamp": "2026-01-13T08:21:03.280Z",
+      "personId": "mkbdwwh3mg0s81jl2h"
+    },
+    {
+      "id": "mkcbod2vt2v42p15mx",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 1,
+      "timestamp": "2026-01-13T08:21:03.415Z",
+      "personId": "mkbdwwh3mg0s81jl2h"
+    },
+    {
+      "id": "mkcbodabfywet5xevcq",
+      "productId": "capuccino",
+      "productName": "Capuccino",
+      "price": 1.5,
+      "timestamp": "2026-01-13T08:21:03.683Z",
+      "personId": "mkbdwwh3mg0s81jl2h"
+    },
+    {
+      "id": "mkcbodejk6tyvyi1z8f",
+      "productId": "capuccino",
+      "productName": "Capuccino",
+      "price": 1.5,
+      "timestamp": "2026-01-13T08:21:03.835Z",
+      "personId": "mkbdwwh3mg0s81jl2h"
+    },
+    {
+      "id": "mkcbodkt0qcrnyohodxm",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 1,
+      "timestamp": "2026-01-13T08:21:04.061Z",
+      "personId": "mkbdwwh3mg0s81jl2h"
+    },
+    {
+      "id": "mkcbodyjxc7xv6bzah",
+      "productId": "espresso",
+      "productName": "Espresso",
+      "price": 1,
+      "timestamp": "2026-01-13T08:21:04.555Z",
+      "personId": "mkbdwwh3mg0s81jl2h"
+    },
+    {
+      "id": "mkcboe3cyry5qkwtw6b",
+      "productId": "espresso",
+      "productName": "Espresso",
+      "price": 1,
+      "timestamp": "2026-01-13T08:21:04.728Z",
+      "personId": "mkbdwwh3mg0s81jl2h"
+    },
+    {
+      "id": "mkcboeb13lazu9urjrp",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 1,
+      "timestamp": "2026-01-13T08:21:05.005Z",
+      "personId": "mkbdwwh3mg0s81jl2h"
+    },
+    {
+      "id": "mkcboms18qt0yncjuzd",
+      "productId": "espresso",
+      "productName": "Espresso",
+      "price": 0,
+      "timestamp": "2026-01-13T08:21:15.985Z",
+      "personId": "mkbdwwh3mg0s81jl2h",
+      "isFreeRedemption": false,
+      "paidWithStamp": true,
+      "originalPrice": 1
+    },
+    {
+      "id": "mkcbon3w55v0f0r3dg4",
+      "productId": "espresso",
+      "productName": "Espresso",
+      "price": 0,
+      "timestamp": "2026-01-13T08:21:16.412Z",
+      "personId": "mkbdwwh3mg0s81jl2h",
+      "isFreeRedemption": false,
+      "paidWithStamp": true,
+      "originalPrice": 1
+    },
+    {
+      "id": "mkcbond91unh8upw8py",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 0,
+      "timestamp": "2026-01-13T08:21:16.749Z",
+      "personId": "mkbdwwh3mg0s81jl2h",
+      "isFreeRedemption": false,
+      "paidWithStamp": true,
+      "originalPrice": 1
+    },
+    {
+      "id": "mkcbonv6gzfxmk27bph",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 0,
+      "timestamp": "2026-01-13T08:21:17.394Z",
+      "personId": "mkbdwwh3mg0s81jl2h",
+      "isFreeRedemption": false,
+      "paidWithStamp": true,
+      "originalPrice": 1
+    },
+    {
+      "id": "mkcbonyrkubsr2codo",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 0,
+      "timestamp": "2026-01-13T08:21:17.523Z",
+      "personId": "mkbdwwh3mg0s81jl2h",
+      "isFreeRedemption": false,
+      "paidWithStamp": true,
+      "originalPrice": 1
+    },
+    {
+      "id": "mkcboo69cfz25nqhs8g",
+      "productId": "espresso",
+      "productName": "Espresso",
+      "price": 0,
+      "timestamp": "2026-01-13T08:21:17.793Z",
+      "personId": "mkbdwwh3mg0s81jl2h",
+      "isFreeRedemption": false,
+      "paidWithStamp": true,
+      "originalPrice": 1
+    },
+    {
+      "id": "mkcbopfg84diwlfhuim",
+      "productId": "macchiato",
+      "productName": "Macchiato",
+      "price": 0,
+      "timestamp": "2026-01-13T08:21:19.420Z",
+      "personId": "mkbdwwh3mg0s81jl2h",
+      "isFreeRedemption": false,
+      "paidWithStamp": true,
+      "originalPrice": 1
+    },
+    {
+      "id": "mkcboqfi9xhtawm68j",
+      "productId": "espresso",
+      "productName": "Espresso",
+      "price": 0,
+      "timestamp": "2026-01-13T08:21:20.718Z",
+      "personId": "mkbdwwh3mg0s81jl2h",
+      "isFreeRedemption": false,
+      "paidWithStamp": true,
+      "originalPrice": 1
+    }
+  ]
+}

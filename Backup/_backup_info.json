@@ -1,0 +1,27 @@
+{
+  "lastBackup": "2026-01-13T08:22:48.275Z",
+  "databasesBackedUp": 5,
+  "databases": [
+    {
+      "name": "Produkte",
+      "filename": "db_produkte.json"
+    },
+    {
+      "name": "Gutschriften",
+      "filename": "db_gutschriften.json"
+    },
+    {
+      "name": "Schuldbuch",
+      "filename": "db_schuldbuch.json"
+    },
+    {
+      "name": "Inventar",
+      "filename": "db_inventar.json"
+    },
+    {
+      "name": "Treuekarten",
+      "filename": "db_treuekarten.json"
+    }
+  ],
+  "version": "2.0"
+}

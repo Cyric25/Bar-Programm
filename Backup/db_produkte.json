@@ -1,0 +1,44 @@
+{
+  "_metadata": {
+    "databaseName": "Produkte",
+    "exportDate": "2026-01-13T08:22:47.946Z",
+    "version": "2.0"
+  },
+  "fos_bar_products": [
+    {
+      "id": "espresso",
+      "name": "Espresso",
+      "price": 1,
+      "category": "h_getraenke",
+      "sortOrder": 1
+    },
+    {
+      "id": "macchiato",
+      "name": "Macchiato",
+      "price": 1,
+      "category": "h_getraenke",
+      "sortOrder": 1
+    },
+    {
+      "id": "capuccino",
+      "name": "Capuccino",
+      "price": 1.5,
+      "category": "h_getraenke",
+      "sortOrder": 3
+    }
+  ],
+  "fos_bar_categories": [
+    {
+      "id": "drinks",
+      "label": "Getränke"
+    },
+    {
+      "id": "snacks",
+      "label": "Snacks"
+    },
+    {
+      "id": "h_getraenke",
+      "label": "Heiße Getränke"
+    }
+  ]
+}

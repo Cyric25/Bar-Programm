@@ -268,8 +268,23 @@ header h1 {
 }
 
 .sale-item.free-sale {
-    background: linear-gradient(90deg, rgba(16, 185, 129, 0.05), transparent);
-    border-left: 3px solid var(--secondary-color);
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent);
+    border-left: 4px solid var(--secondary-color);
+}
+
+.sale-item.stamp-sale {
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.05), transparent);
+    border-left: 4px solid var(--primary-color);
+}
+
+.sale-item.credit-sale {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.05), transparent);
+    border-left: 4px solid var(--warning-color);
+}
+
+.sale-item.cash-sale {
+    background: transparent;
+    border-left: 4px solid transparent;
 }
 
 .sale-time {
@@ -289,6 +304,39 @@ header h1 {
     font-size: 0.85rem;
 }
 
+/* Payment Badges */
+.payment-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 8px;
+    white-space: nowrap;
+}
+
+.badge-gratis {
+    background: var(--secondary-color);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.badge-stamp {
+    background: var(--primary-color);
+    color: white;
+}
+
+.badge-credit {
+    background: var(--warning-color);
+    color: white;
+}
+
+.badge-cash {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+/* Legacy badge support */
 .loyalty-badge {
     display: inline-block;
     padding: 0.15rem 0.5rem;

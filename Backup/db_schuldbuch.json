@@ -1,0 +1,81 @@
+{
+  "_metadata": {
+    "databaseName": "Schuldbuch",
+    "exportDate": "2026-01-13T08:22:48.107Z",
+    "version": "2.0"
+  },
+  "fos_bar_debtors_index": [
+    {
+      "id": "mkbe2fd9qy7cm28hi8",
+      "name": "Heinzl Peter",
+      "debt": 8,
+      "lastModified": "2026-01-13T08:20:59.198Z"
+    }
+  ],
+  "debtors": [
+    {
+      "id": "mkbe2fd9qy7cm28hi8",
+      "name": "Heinzl Peter",
+      "debt": 8,
+      "transactions": [
+        {
+          "id": "mkcbo8kkecnbrxbq2g",
+          "type": "purchase",
+          "amount": 1,
+          "productName": "Espresso",
+          "timestamp": "2026-01-13T08:20:57.572Z",
+          "saleId": "mkcbo8kkj1sdwmo4fir"
+        },
+        {
+          "id": "mkcbo8s4io85qo17on8",
+          "type": "purchase",
+          "amount": 1,
+          "productName": "Macchiato",
+          "timestamp": "2026-01-13T08:20:57.844Z",
+          "saleId": "mkcbo8s495hs5m667ke"
+        },
+        {
+          "id": "mkcbo91suk48nptenzr",
+          "type": "purchase",
+          "amount": 1.5,
+          "productName": "Capuccino",
+          "timestamp": "2026-01-13T08:20:58.192Z",
+          "saleId": "mkcbo91souzjpx5crv"
+        },
+        {
+          "id": "mkcbo96f8iz08h99gse",
+          "type": "purchase",
+          "amount": 1.5,
+          "productName": "Capuccino",
+          "timestamp": "2026-01-13T08:20:58.359Z",
+          "saleId": "mkcbo96f9syukt1zbeh"
+        },
+        {
+          "id": "mkcbo9ia9yqsfns3655",
+          "type": "purchase",
+          "amount": 1,
+          "productName": "Macchiato",
+          "timestamp": "2026-01-13T08:20:58.786Z",
+          "saleId": "mkcbo9ia9mhzxq3h6hq"
+        },
+        {
+          "id": "mkcbo9mhunzumiiqc3",
+          "type": "purchase",
+          "amount": 1,
+          "productName": "Macchiato",
+          "timestamp": "2026-01-13T08:20:58.937Z",
+          "saleId": "mkcbo9mhynhjvnh5ewi"
+        },
+        {
+          "id": "mkcbo9tq2bkqgqn25n6",
+          "type": "purchase",
+          "amount": 1,
+          "productName": "Espresso",
+          "timestamp": "2026-01-13T08:20:59.198Z",
+          "saleId": "mkcbo9tqpgq2bkihuxk"
+        }
+      ],
+      "createdAt": "2026-01-12T16:40:12.621Z"
+    }
+  ]
+}
