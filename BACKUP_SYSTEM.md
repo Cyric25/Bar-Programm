@@ -40,20 +40,19 @@ Das System startet automatisch:
 
 ## Gesicherte Dateien
 
-Im Backup-Ordner werden folgende Dateien erstellt:
+Im Backup-Ordner werden folgende **konsolidierte Datenbank-Dateien** erstellt:
 
 ```
 FOS-Bar-Backup/
-├── backup_products.json              # Produktkatalog
-├── backup_categories.json            # Kategorien
-├── backup_sales.json                 # Verkaufsdaten
-├── backup_persons.json               # Kundenguthaben
-├── backup_debtors_index.json         # Schuldner-Index
-├── backup_debtor_{id}.json           # Einzelne Schuldner
-├── backup_loyalty_card_types.json    # Treuekarten-Typen
-├── backup_inventory.json             # Inventar
-└── backup_metadata.json              # Backup-Info
+├── db_produkte.json          # Produktkatalog + Kategorien
+├── db_gutschriften.json      # Personen mit Guthaben + Treuekarten
+├── db_schuldbuch.json        # Personen mit Schulden (alle Schuldner)
+├── db_inventar.json          # Inventar + Verkaufsdaten
+├── db_treuekarten.json       # Treuekarten-Typen
+└── _backup_info.json         # Backup-Metadaten
 ```
+
+Jede Datei ist eine eigenständige Datenbank und kann separat importiert/exportiert werden.
 
 ## Daten wiederherstellen
 
@@ -88,6 +87,71 @@ manualBackup()
 ```javascript
 setupBackup()
 ```
+
+## Einzelne Datenbanken exportieren/importieren
+
+Sie können jede Datenbank einzeln exportieren und importieren. Dies ist nützlich für:
+- Übertragung einzelner Daten zwischen Geräten
+- Sicherung spezifischer Bereiche
+- Wiederherstellung ohne andere Daten zu überschreiben
+
+### Export (Browser-Konsole F12)
+
+```javascript
+// Produktkatalog + Kategorien exportieren
+exportProdukte()
+
+// Personen mit Guthaben exportieren
+exportGutschriften()
+
+// Schuldbuch exportieren (alle Schuldner)
+exportSchuldbuch()
+
+// Inventar + Verkaufsdaten exportieren
+exportInventar()
+
+// Treuekarten-Typen exportieren
+exportTreuekarten()
+```
+
+### Import (Browser-Konsole F12)
+
+```javascript
+// Produktkatalog + Kategorien importieren
+importProdukte()
+
+// Personen mit Guthaben importieren
+importGutschriften()
+
+// Schuldbuch importieren (alle Schuldner)
+importSchuldbuch()
+
+// Inventar + Verkaufsdaten importieren
+importInventar()
+
+// Treuekarten-Typen importieren
+importTreuekarten()
+```
+
+Nach dem Import wird die Seite automatisch neu geladen, um die Änderungen anzuzeigen.
+
+### Datenbank-Format
+
+Jede Datenbank-Datei hat folgende Struktur:
+
+```json
+{
+  "_metadata": {
+    "databaseName": "Produkte",
+    "exportDate": "2026-01-13T08:00:00.000Z",
+    "version": "2.0"
+  },
+  "fos_bar_products": [...],
+  "fos_bar_categories": [...]
+}
+```
+
+Die Metadaten stellen sicher, dass nur kompatible Datenbanken importiert werden können.
 
 ## Browser-Kompatibilität
 
