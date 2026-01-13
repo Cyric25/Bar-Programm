@@ -1,6 +1,9 @@
 # FOS Bar - Kassensystem
 
-Ein vollständiges Point-of-Sale (POS) System für eine Schulbar, entwickelt als client-seitige Webanwendung mit Vanilla JavaScript.
+Ein vollständiges Point-of-Sale (POS) System für eine Schulbar, verfügbar als **Web-Anwendung** und **Android-App**.
+
+- 🌐 **Web-Version**: Browser-basiert (Chrome, Edge, Firefox)
+- 📱 **Android-Version**: Native APK mit Capacitor (siehe [android-conversion Branch](https://github.com/Cyric25/Bar-Programm/tree/android-conversion))
 
 ## Features
 
@@ -44,7 +47,51 @@ Ein vollständiges Point-of-Sale (POS) System für eine Schulbar, entwickelt als
 - **Statistik**: Verkaufsanalysen mit Top-Verkäufer-Listen
 - **Inventar**: Bestandsverwaltung mit Verbrauchsprognosen
 
-## Installation
+## Android-App (NEU) 📱
+
+Die FOS Bar ist jetzt auch als **native Android-App** verfügbar!
+
+### Android-spezifische Features:
+- ✅ **Automatisches Backup** ins App-Verzeichnis (alle 60 Sek.)
+- ✅ **Natives Back-Button Handling** (Tab-Navigation, Exit-Bestätigung)
+- ✅ **Gebrandmarkte Status Bar** (blau, passend zum Design)
+- ✅ **Android Share-Dialog** für Datenbank-Exports
+- ✅ **Offline-First** (keine Internet-Verbindung nötig)
+- ✅ **App-Lifecycle Management** (Backup vor Home-Button)
+- ✅ **100% Feature-Parity** mit Web-Version
+
+### Android-APK bauen:
+
+```bash
+# 1. Dependencies installieren
+npm install
+
+# 2. Android-Plattform hinzufügen
+npx cap add android
+
+# 3. Assets synchronisieren
+npx cap sync
+
+# 4. Android Studio öffnen
+npx cap open android
+
+# 5. APK bauen
+Build > Build APK(s)
+```
+
+**Detaillierte Anleitung**: Siehe [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md)
+
+### Android-Dokumentation:
+- 📖 [ANDROID_SETUP.md](ANDROID_SETUP.md) - Setup-Anleitung
+- 📖 [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) - APK-Build-Schritte
+- 📖 [PHASE2_CHANGES.md](PHASE2_CHANGES.md) - Backup-System Details
+- 📖 [PHASE3_CHANGES.md](PHASE3_CHANGES.md) - UI/UX-Features Details
+
+**Branch**: [android-conversion](https://github.com/Cyric25/Bar-Programm/tree/android-conversion)
+
+---
+
+## Installation (Web-Version)
 
 Keine Installation erforderlich! Einfach die Dateien auf einen Webserver kopieren oder lokal öffnen:
 
@@ -101,10 +148,18 @@ Siehe [CLAUDE.md](CLAUDE.md) für detaillierte Architektur-Dokumentation.
 
 ## Dokumentation
 
+### Web-Version
 - [CLAUDE.md](CLAUDE.md) - Technische Architektur und Entwickler-Guide
+- [BACKUP_SYSTEM.md](BACKUP_SYSTEM.md) - Automatisches Backup-System (Web)
 - [EXPORT_IMPORT_ANLEITUNG.md](EXPORT_IMPORT_ANLEITUNG.md) - Export/Import Funktionen
 - [FEHLERBEHEBUNG.md](FEHLERBEHEBUNG.md) - Bekannte Probleme und Lösungen
 - [CACHE_LEEREN_ANLEITUNG.html](CACHE_LEEREN_ANLEITUNG.html) - Browser-Cache leeren
+
+### Android-Version
+- [ANDROID_SETUP.md](ANDROID_SETUP.md) - Android Setup-Anleitung
+- [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) - APK Build-Anleitung
+- [PHASE2_CHANGES.md](PHASE2_CHANGES.md) - Android Backup-System
+- [PHASE3_CHANGES.md](PHASE3_CHANGES.md) - Android UI/UX-Features
 
 ## Lizenz
 
