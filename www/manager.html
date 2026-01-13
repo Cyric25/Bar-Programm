@@ -422,10 +422,17 @@
             import('https://cdn.jsdelivr.net/npm/@capacitor/share@5.0.0/dist/esm/index.js').then(module => {
                 window.Capacitor.Plugins.Share = module.Share;
             });
+            import('https://cdn.jsdelivr.net/npm/@capacitor/app@5.0.0/dist/esm/index.js').then(module => {
+                window.Capacitor.Plugins.App = module.App;
+            });
+            import('https://cdn.jsdelivr.net/npm/@capacitor/status-bar@5.0.0/dist/esm/index.js').then(module => {
+                window.Capacitor.Plugins.StatusBar = module.StatusBar;
+            });
         }
     </script>
 
     <script src="backup-android.js"></script>
+    <script src="app-android.js"></script>
     <script src="manager.js?v=1768216614788"></script>
     <script>
         // Inline tab functionality - guaranteed to work

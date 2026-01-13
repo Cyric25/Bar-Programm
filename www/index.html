@@ -413,10 +413,17 @@
             import('https://cdn.jsdelivr.net/npm/@capacitor/share@5.0.0/dist/esm/index.js').then(module => {
                 window.Capacitor.Plugins.Share = module.Share;
             });
+            import('https://cdn.jsdelivr.net/npm/@capacitor/app@5.0.0/dist/esm/index.js').then(module => {
+                window.Capacitor.Plugins.App = module.App;
+            });
+            import('https://cdn.jsdelivr.net/npm/@capacitor/status-bar@5.0.0/dist/esm/index.js').then(module => {
+                window.Capacitor.Plugins.StatusBar = module.StatusBar;
+            });
         }
     </script>
 
     <script src="backup-android.js"></script>
+    <script src="app-android.js"></script>
     <script src="app.js?v=1768234553"></script>
     <script>
         // Inline Tab Fallback - runs after app.js
