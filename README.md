@@ -4,6 +4,13 @@ Ein vollständiges Point-of-Sale (POS) System für eine Schulbar, entwickelt als
 
 ## Features
 
+### Automatisches Backup-System
+- **Automatische Datensicherung** alle 60 Sekunden
+- **Lokale Speicherung** in einem Ordner Ihrer Wahl
+- **Wiederherstellung** bei Gerätewechsel oder Datenverlust
+- **File System Access API** für moderne Browser (Chrome, Edge)
+- Siehe [BACKUP_SYSTEM.md](BACKUP_SYSTEM.md) für Details
+
 ### Verkaufssystem
 - **Schnelle Produktauswahl** mit Kategorisierung (Getränke, Alkohol, Snacks)
 - **Mehrere Zahlungsmethoden**:
