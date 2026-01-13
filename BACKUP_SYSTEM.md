@@ -37,6 +37,17 @@ Das System startet automatisch:
 - ✅ Erstes Backup wird sofort erstellt
 - ✅ Automatische Backups alle 60 Sekunden
 - ✅ Status wird unten rechts angezeigt
+- ✅ **Ordner wird gemerkt**: Beim Wechsel zwischen index.html und manager.html wird automatisch derselbe Ordner verwendet
+
+### Wichtig: Ordner-Merkfunktion
+
+Nach der ersten Einrichtung merkt sich das System, dass Sie ein Backup aktiviert haben. Beim nächsten Öffnen:
+1. **Kein Banner mehr** - Das Banner erscheint nicht erneut
+2. **Automatische Anfrage** - Der Browser fragt direkt nach dem Backup-Ordner
+3. **Zwischen Seiten wechseln** - Funktioniert nahtlos zwischen index.html und manager.html
+4. **Einmal einrichten** - Danach immer aktiv
+
+**Hinweis:** Der Browser kann File System API Handles nicht persistent speichern. Daher müssen Sie bei jedem Seitenaufruf einmal den Ordner bestätigen (ein Klick im Browser-Dialog).
 
 ## Gesicherte Dateien
 
@@ -87,6 +98,14 @@ manualBackup()
 ```javascript
 setupBackup()
 ```
+
+### Backup deaktivieren
+
+```javascript
+disableBackup()
+```
+
+Stoppt das automatische Backup und entfernt die Konfiguration. Das Banner erscheint beim nächsten Start wieder.
 
 ## Einzelne Datenbanken exportieren/importieren
 

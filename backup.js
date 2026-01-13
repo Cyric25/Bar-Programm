@@ -49,20 +49,22 @@ class AutoBackup {
             return false;
         }
 
-        // Prüfe ob bereits Verzeichnis-Zugriff gewährt wurde
-        const hasPermission = await this.checkStoredPermission();
+        // Prüfe ob Backup bereits konfiguriert wurde
+        const backupConfigured = localStorage.getItem('backup_configured');
+        const backupDismissed = localStorage.getItem('backup_dismissed');
 
-        if (!hasPermission) {
-            // Zeige Info-Banner, dass Backup-Verzeichnis ausgewählt werden kann
+        if (backupConfigured === 'true') {
+            // Backup wurde bereits eingerichtet - automatisch Ordner auswählen
+            console.log('ℹ️ Backup wurde bereits konfiguriert - Ordner wird angefordert...');
+            await this.setupBackupDirectory(true);
+            return true;
+        } else if (!backupDismissed || (Date.now() - parseInt(backupDismissed)) > 7 * 24 * 60 * 60 * 1000) {
+            // Zeige Setup-Banner wenn noch nicht dismissed oder >7 Tage her
             this.showSetupBanner();
             return false;
         }
 
-        // Starte automatisches Backup
-        await this.performBackup();
-        this.startAutoBackup();
-        console.log('✅ Auto-Backup aktiviert');
-        return true;
+        return false;
     }
 
     async checkStoredPermission() {
@@ -98,7 +100,7 @@ class AutoBackup {
 
         document.getElementById('btn-dismiss-backup').addEventListener('click', () => {
             banner.remove();
-            localStorage.setItem('backup_dismissed', Date.now());
+            localStorage.setItem('backup_dismissed', Date.now().toString());
         });
     }
 
@@ -126,9 +128,12 @@ class AutoBackup {
         });
     }
 
-    async setupBackupDirectory() {
+    async setupBackupDirectory(silent = false) {
         try {
-            console.log('📁 Wähle Backup-Verzeichnis...');
+            if (!silent) {
+                console.log('📁 Wähle Backup-Verzeichnis...');
+            }
+
             this.dirHandle = await window.showDirectoryPicker({
                 mode: 'readwrite',
                 startIn: 'documents'
@@ -136,12 +141,20 @@ class AutoBackup {
 
             console.log('✅ Backup-Verzeichnis ausgewählt:', this.dirHandle.name);
 
+            // Speichere dass Backup konfiguriert wurde
+            localStorage.setItem('backup_configured', 'true');
+            localStorage.removeItem('backup_dismissed');
+
             // Entferne Setup-Banner
             const banner = document.getElementById('backup-setup-banner');
             if (banner) banner.remove();
 
-            // Zeige Erfolgs-Nachricht
-            this.showSuccessMessage('Automatisches Backup aktiviert! Daten werden alle 60 Sekunden gesichert.');
+            // Zeige Erfolgs-Nachricht nur wenn nicht silent
+            if (!silent) {
+                this.showSuccessMessage('Automatisches Backup aktiviert! Daten werden alle 60 Sekunden gesichert.');
+            } else {
+                console.log('ℹ️ Backup automatisch reaktiviert');
+            }
 
             // Erstes Backup durchführen
             await this.performBackup();
@@ -153,9 +166,15 @@ class AutoBackup {
         } catch (error) {
             if (error.name === 'AbortError') {
                 console.log('ℹ️ Backup-Einrichtung abgebrochen');
+                // Bei Abbruch: Konfiguration zurücksetzen
+                if (silent) {
+                    localStorage.removeItem('backup_configured');
+                }
             } else {
                 console.error('❌ Fehler beim Einrichten des Backups:', error);
-                this.showErrorMessage('Fehler beim Einrichten des automatischen Backups');
+                if (!silent) {
+                    this.showErrorMessage('Fehler beim Einrichten des automatischen Backups');
+                }
             }
             return false;
         }
@@ -413,6 +432,14 @@ class AutoBackup {
         }
     }
 
+    disableBackup() {
+        this.stopAutoBackup();
+        this.dirHandle = null;
+        localStorage.removeItem('backup_configured');
+        console.log('❌ Backup deaktiviert');
+        this.showSuccessMessage('Automatisches Backup wurde deaktiviert');
+    }
+
     updateBackupStatus(message) {
         const statusElement = document.getElementById('backup-status');
         if (statusElement) {
@@ -480,6 +507,7 @@ window.autoBackup = autoBackup;
 window.setupBackup = () => autoBackup?.setupBackupDirectory();
 window.restoreBackup = () => autoBackup?.restoreFromBackup();
 window.manualBackup = () => autoBackup?.performBackup();
+window.disableBackup = () => autoBackup?.disableBackup();
 
 // Export einzelner Datenbanken
 window.exportProdukte = () => exportDatabase('Produkte');
