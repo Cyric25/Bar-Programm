@@ -1,0 +1,29 @@
+{
+  "name": "fos-bar-android",
+  "version": "1.0.0",
+  "description": "FOS Bar POS System - Android App",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'No build step needed - using existing files'",
+    "sync": "npx cap sync",
+    "open:android": "npx cap open android"
+  },
+  "keywords": [
+    "pos",
+    "android",
+    "capacitor"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/app": "^5.0.0",
+    "@capacitor/core": "^5.0.0",
+    "@capacitor/filesystem": "^5.0.0",
+    "@capacitor/share": "^5.0.0",
+    "@capacitor/status-bar": "^5.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^5.0.0"
+  }
+}

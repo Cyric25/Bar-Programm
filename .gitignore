@@ -22,3 +22,10 @@ test-*.html
 
 # Node modules (if you add any build tools later)
 node_modules/
+
+# Capacitor
+android/
+ios/
+.capacitor/
+dist/
+package-lock.json

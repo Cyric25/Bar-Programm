@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOS Bar - Verkaufserfassung</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1>FOS Bar</h1>
+                <a href="manager.html" class="btn-admin">Manager</a>
+            </div>
+            <div class="header-info">
+                <span id="current-date"></span>
+                <span id="daily-total">0.00€</span>
+            </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="verkauf">Verkauf</button>
+            <button class="tab-btn" data-tab="gutschriften">Gutschriften</button>
+            <button class="tab-btn" data-tab="schuldbuch">Schuldbuch</button>
+        </nav>
+
+        <!-- VERKAUF TAB -->
+        <div id="verkauf-tab" class="tab-content active">
+            <div class="products-grid" id="products-grid">
+                <!-- Produkte werden hier dynamisch eingefügt -->
+            </div>
+
+            <div class="sales-section">
+                <h2>Heutige Verkäufe</h2>
+                <div class="sales-list" id="sales-list">
+                    <p class="empty-message">Noch keine Verkäufe heute</p>
+                </div>
+            </div>
+
+            <div class="export-section" style="margin-top: 20px;">
+                <h3>Verkaufsdaten</h3>
+                <button class="btn-export" id="btn-export">Daten exportieren (JSON)</button>
+                <button class="btn-import" id="btn-import">Daten importieren</button>
+                <input type="file" id="file-import" accept=".json" style="display: none;">
+                <button class="btn-clear" id="btn-clear-day">Heutigen Tag löschen</button>
+            </div>
+        </div>
+
+        <!-- GUTSCHRIFTEN TAB -->
+        <div id="gutschriften-tab" class="tab-content">
+            <div class="credits-container">
+                <!-- Alphabet-Filter und Personenliste -->
+                <section class="credits-persons-section">
+                    <div class="section-header">
+                        <h2>Personen (<span id="persons-count-credits">0</span>)</h2>
+                        <div class="header-actions">
+                            <button class="btn-primary btn-small" onclick="showAddCreditDialog()">
+                                + Person hinzufügen
+                            </button>
+                            <label class="toggle-label">
+                                <input type="checkbox" id="show-zero-balance-credits" checked>
+                                <span>Mit 0€ anzeigen</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Alphabet-Filter -->
+                    <div class="alphabet-filter" id="alphabet-filter">
+                        <button class="alphabet-btn active" data-letter="all">Alle</button>
+                    </div>
+
+                    <!-- Personenliste -->
+                    <div class="persons-grid" id="persons-grid-credits">
+                        <p class="empty-message">Noch keine Personen erfasst</p>
+                    </div>
+                </section>
+
+                <!-- Aktive Person Info -->
+                <section class="credits-sale-section" id="credits-selected-person-info" style="display: none;">
+                    <div class="info-card">
+                        <h3 id="credits-info-person-name">-</h3>
+                        <p class="info-balance">Aktuelles Guthaben: <span id="credits-info-person-balance">0.00€</span></p>
+                        <button class="btn-secondary btn-small" onclick="clearCreditsPersonSelection()">Auswahl aufheben</button>
+                    </div>
+                </section>
+
+                <!-- Produkte zum Kauf -->
+                <section class="credits-products-section" id="credits-products-section" style="display: none;">
+                    <div class="section-header-inline">
+                        <h2>Produkte kaufen</h2>
+                        <div class="payment-method-toggle">
+                            <label>
+                                <input type="radio" name="payment-method" value="credit" checked>
+                                <span>Mit Guthaben</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="payment-method" value="stamp">
+                                <span>Mit Stempelkarte</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="products-grid" id="credits-products-grid">
+                        <!-- Produkte werden hier dynamisch eingefügt -->
+                    </div>
+                </section>
+
+                <!-- Treuekarten der ausgewählten Person -->
+                <section class="loyalty-cards-section" id="loyalty-cards-section" style="display: none;">
+                    <div class="section-header-inline">
+                        <h3>Treuekarten</h3>
+                        <button class="btn-small btn-add-card" id="btn-add-loyalty-card">+ Treuekarte hinzufügen</button>
+                    </div>
+
+                    <!-- Treuekarte hinzufügen Form -->
+                    <div class="add-loyalty-card-form" id="add-loyalty-card-form" style="display: none;">
+                        <select id="select-loyalty-card-type" class="loyalty-card-selector">
+                            <option value="">Treuekarte auswählen...</option>
+                            <!-- Dynamisch befüllt -->
+                        </select>
+                        <button class="btn-primary btn-small" onclick="confirmAddLoyaltyCard()">Hinzufügen</button>
+                        <button class="btn-secondary btn-small" onclick="cancelAddLoyaltyCard()">Abbrechen</button>
+                    </div>
+
+                    <div class="loyalty-cards-grid" id="person-loyalty-cards">
+                        <!-- Dynamisch befüllt -->
+                    </div>
+                </section>
+
+                <!-- Personenliste -->
+                <section class="credits-list-section">
+                    <div class="section-header">
+                        <h2>Alle Personen (<span id="persons-count">0</span>)</h2>
+                        <div class="header-actions">
+                            <button class="btn-primary btn-small" onclick="showAddCreditDialog()">
+                                + Person hinzufügen
+                            </button>
+                            <label class="toggle-label">
+                                <input type="checkbox" id="show-zero-balance" checked>
+                                <span>Mit 0€ anzeigen</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="persons-list" id="persons-list">
+                        <p class="empty-message">Noch keine Personen erfasst</p>
+                    </div>
+
+                    <div class="export-section">
+                        <button class="btn-export" id="btn-export-persons">Gutschriften exportieren (JSON)</button>
+                        <button class="btn-import" id="btn-import-persons">Gutschriften importieren</button>
+                        <input type="file" id="file-import-persons" accept=".json" style="display: none;">
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- SCHULDBUCH TAB -->
+        <div id="schuldbuch-tab" class="tab-content">
+            <div class="debt-container">
+                <!-- Schuldner-Liste mit Alphabet-Filter -->
+                <section class="debt-persons-section">
+                    <div class="section-header">
+                        <h2>Schuldner (<span id="debtors-count">0</span>)</h2>
+                        <div class="header-actions">
+                            <button class="btn-primary btn-small" onclick="showAddDebtorDialog()">
+                                + Person hinzufügen
+                            </button>
+                            <label class="toggle-label">
+                                <input type="checkbox" id="show-paid-debts" checked>
+                                <span>Beglichene anzeigen</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Alphabet-Filter -->
+                    <div class="alphabet-filter" id="debt-alphabet-filter">
+                        <button class="alphabet-btn active" data-letter="all">Alle</button>
+                    </div>
+
+                    <!-- Schuldner-Liste -->
+                    <div class="persons-grid" id="debtors-grid">
+                        <p class="empty-message">Noch keine Schuldner erfasst</p>
+                    </div>
+                </section>
+
+                <!-- Aktiver Schuldner Info -->
+                <section class="debt-active-section" id="debt-active-section" style="display: none;">
+                    <div class="debt-info-card">
+                        <h3 id="debt-info-person-name">-</h3>
+                        <p class="debt-info-amount">Offene Schulden: <span id="debt-info-person-debt">0.00€</span></p>
+                        <div class="debt-actions">
+                            <button class="btn-primary btn-small" onclick="showAddDebtAmountDialog()">
+                                + Betrag hinzufügen
+                            </button>
+                            <button class="btn-primary btn-small" onclick="showPayDebtDialog()">
+                                Schuld tilgen
+                            </button>
+                            <button class="btn-secondary btn-small" onclick="clearDebtPersonSelection()">
+                                Auswahl aufheben
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Produkte für Schuld-Kauf -->
+                <section class="debt-products-section" id="debt-products-section" style="display: none;">
+                    <h2>Produkte auf Schuld kaufen</h2>
+                    <div class="products-grid" id="debt-products-grid">
+                        <!-- Produkte werden hier dynamisch eingefügt -->
+                    </div>
+                </section>
+
+                <!-- Schulden-Historie -->
+                <section class="debt-history-section" id="debt-history-section" style="display: none;">
+                    <h3>Schulden-Historie</h3>
+                    <div class="debt-transactions" id="debt-transactions">
+                        <p class="empty-message">Keine Transaktionen</p>
+                    </div>
+                </section>
+
+                <!-- Export/Import für Schuldbuch -->
+                <section class="debt-export-section" style="margin-top: 20px;">
+                    <h3>Schuldbuch Daten</h3>
+                    <div class="export-section">
+                        <button class="btn-export" id="btn-export-debts">Schuldbuch exportieren (JSON)</button>
+                        <button class="btn-import" id="btn-import-debts">Schuldbuch importieren</button>
+                        <input type="file" id="file-import-debts" accept=".json" style="display: none;">
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast für Feedback -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Bestätigungs-Dialog -->
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Bestätigung</h3>
+            <p id="modal-message"></p>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="modal-cancel">Abbrechen</button>
+                <button class="btn-confirm" id="modal-confirm">Bestätigen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guthaben aufladen Dialog -->
+    <div class="modal" id="credit-modal">
+        <div class="modal-content">
+            <h3>Person hinzufügen / Guthaben aufladen</h3>
+            <form id="credits-form">
+                <div class="form-group">
+                    <label for="person-name">Name der Person *</label>
+                    <input
+                        type="text"
+                        id="person-name"
+                        name="person-name"
+                        list="person-suggestions"
+                        required
+                        placeholder="z.B. Max Mustermann"
+                        autocomplete="off"
+                    >
+                    <datalist id="person-suggestions"></datalist>
+                </div>
+
+                <div class="form-group">
+                    <label for="credit-amount">Betrag (€) *</label>
+                    <input
+                        type="number"
+                        id="credit-amount"
+                        name="credit-amount"
+                        step="0.50"
+                        min="0"
+                        required
+                        placeholder="10.00"
+                    >
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="credit-modal-cancel">Abbrechen</button>
+                    <button type="submit" class="btn-confirm">Aufladen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Schuldner hinzufügen Dialog -->
+    <div class="modal" id="debtor-modal">
+        <div class="modal-content">
+            <h3>Schuldner hinzufügen</h3>
+            <form id="debtor-form">
+                <div class="form-group">
+                    <label for="debtor-name">Name der Person *</label>
+                    <input
+                        type="text"
+                        id="debtor-name"
+                        name="debtor-name"
+                        list="debtor-suggestions"
+                        required
+                        placeholder="z.B. Max Mustermann"
+                        autocomplete="off"
+                    >
+                    <datalist id="debtor-suggestions"></datalist>
+                </div>
+
+                <div class="form-group">
+                    <label for="initial-debt">Initiale Schuld (€, optional)</label>
+                    <input
+                        type="number"
+                        id="initial-debt"
+                        name="initial-debt"
+                        step="0.50"
+                        min="0"
+                        placeholder="0.00"
+                    >
+                    <small>Betrag eingeben, wenn bereits Schulden bestehen</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="debtor-modal-cancel">Abbrechen</button>
+                    <button type="submit" class="btn-confirm">Hinzufügen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Betrag zur Schuld hinzufügen Dialog -->
+    <div class="modal" id="add-debt-amount-modal">
+        <div class="modal-content">
+            <h3>Betrag zur Schuld hinzufügen</h3>
+            <form id="add-debt-amount-form">
+                <div class="form-group">
+                    <label for="debt-amount">Betrag (€) *</label>
+                    <input
+                        type="number"
+                        id="debt-amount"
+                        name="debt-amount"
+                        step="0.50"
+                        min="0.01"
+                        required
+                        placeholder="10.00"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="debt-note">Notiz (optional)</label>
+                    <input
+                        type="text"
+                        id="debt-note"
+                        name="debt-note"
+                        placeholder="z.B. Bargeld genommen, Sonstiges"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="add-debt-amount-modal-cancel">Abbrechen</button>
+                    <button type="submit" class="btn-confirm">Betrag hinzufügen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Schuld tilgen Dialog -->
+    <div class="modal" id="pay-debt-modal">
+        <div class="modal-content">
+            <h3>Schuld tilgen</h3>
+            <form id="pay-debt-form">
+                <div class="form-group">
+                    <label for="payment-amount">Betrag (€) *</label>
+                    <input
+                        type="number"
+                        id="payment-amount"
+                        name="payment-amount"
+                        step="0.50"
+                        min="0"
+                        required
+                        placeholder="10.00"
+                    >
+                    <small>0€ eingeben = Schuld als beglichen markieren (ohne Zahlung)</small>
+                </div>
+
+                <div class="quick-actions">
+                    <button type="button" class="btn-quick" onclick="setFullDebtAmount()">
+                        Komplette Schuld beglichen
+                    </button>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="pay-debt-modal-cancel">Abbrechen</button>
+                    <button type="submit" class="btn-confirm">Zahlung erfassen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="backup-status" style="display: none;"></div>
+
+    <script src="backup.js"></script>
+    <script src="app.js?v=1768234553"></script>
+    <script>
+        // Inline Tab Fallback - runs after app.js
+        console.log('🔄 Index.html inline tab script loaded');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📋 DOM ready - setting up inline tab handlers as fallback');
+
+            // Get all tab buttons
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            console.log('Found:', tabBtns.length, 'buttons,', tabContents.length, 'contents');
+
+            // Add click handlers
+            tabBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    console.log('🖱️ Inline handler: Tab clicked ->', targetTab);
+
+                    // Remove active from all buttons
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    // Add active to clicked button
+                    this.classList.add('active');
+
+                    // Remove active from all contents
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    // Add active to target content
+                    const targetContent = document.getElementById(targetTab + '-tab');
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                        console.log('✅ Tab activated:', targetTab);
+                    } else {
+                        console.error('❌ Tab content not found:', targetTab + '-tab');
+                    }
+                });
+            });
+
+            console.log('✅ Inline tab handlers attached');
+        });
+    </script>
+</body>
+</html>

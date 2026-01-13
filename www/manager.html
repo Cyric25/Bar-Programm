@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOS Bar - Manager</title>
+    <link rel="stylesheet" href="styles.css?v=1768216614788">
+    <link rel="stylesheet" href="manager.css?v=1768216614788">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Manager</h1>
+            <a href="index.html" class="btn-back">Zurück zur Verkaufsseite</a>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="verwaltung">Verwaltung</button>
+            <button class="tab-btn" data-tab="bilanz">Bilanz</button>
+            <button class="tab-btn" data-tab="statistik">Statistik</button>
+            <button class="tab-btn" data-tab="inventar">Inventar</button>
+        </nav>
+
+        <!-- VERWALTUNG TAB -->
+        <div id="verwaltung-tab" class="tab-content active">
+            <!-- KATEGORIEN VERWALTEN -->
+            <section class="category-management-section">
+                <div class="section-header">
+                    <h2>Kategorien (<span id="category-count">0</span>)</h2>
+                    <button class="btn-primary btn-small" id="btn-add-category">
+                        + Kategorie hinzufügen
+                    </button>
+                </div>
+
+                <!-- Kategorie-Formular (eingeklappt) -->
+                <div class="category-form-wrapper" id="category-form-wrapper" style="display: none;">
+                    <form id="category-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="category-id">ID (eindeutig) *</label>
+                                <input type="text" id="category-id" name="id" required
+                                       placeholder="z.B. drinks" pattern="[a-z0-9_]+"
+                                       title="Nur Kleinbuchstaben, Zahlen und Unterstriche">
+                                <small>Nur Kleinbuchstaben, Zahlen und Unterstriche</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="category-label">Anzeigename *</label>
+                                <input type="text" id="category-label" name="label" required
+                                       placeholder="z.B. Getränke">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary" id="btn-category-submit">
+                                Kategorie hinzufügen
+                            </button>
+                            <button type="button" class="btn-secondary" id="btn-category-cancel">
+                                Abbrechen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Kategorien-Liste -->
+                <div class="categories-list" id="categories-list">
+                    <p class="empty-message">Keine Kategorien vorhanden</p>
+                </div>
+            </section>
+
+            <!-- PRODUKT HINZUFÜGEN/BEARBEITEN -->
+            <section class="form-section">
+                <h2 id="form-title">Neues Produkt hinzufügen</h2>
+
+                <form id="product-form">
+                    <div class="form-group">
+                        <label for="product-name">Produktname *</label>
+                        <input
+                            type="text"
+                            id="product-name"
+                            name="name"
+                            required
+                            placeholder="z.B. Cola"
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product-price">Preis (€) *</label>
+                            <input
+                                type="number"
+                                id="product-price"
+                                name="price"
+                                step="0.01"
+                                min="0"
+                                required
+                                placeholder="1.50"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product-category">Kategorie *</label>
+                            <select id="product-category" name="category" required>
+                                <!-- Dynamisch befüllt -->
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product-sort-order">Sortierung (optional)</label>
+                            <input
+                                type="number"
+                                id="product-sort-order"
+                                name="sortOrder"
+                                min="0"
+                                placeholder="0"
+                            >
+                            <small>Niedrigere Werte erscheinen zuerst</small>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary" id="btn-submit">
+                            Produkt hinzufügen
+                        </button>
+                        <button type="button" class="btn-secondary" id="btn-cancel">
+                            Abbrechen
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- PRODUKTLISTE -->
+            <section class="products-section">
+                <div class="section-header">
+                    <h2>Alle Produkte (<span id="product-count">0</span>)</h2>
+                    <div class="header-actions">
+                        <button class="btn-export" id="btn-export">
+                            JSON exportieren
+                        </button>
+                        <button class="btn-import" id="btn-import">
+                            JSON importieren
+                        </button>
+                        <input type="file" id="file-import" accept=".json" style="display: none;">
+                    </div>
+                </div>
+
+                <!-- Filter nach Kategorie -->
+                <div class="category-filter" id="category-filter">
+                    <!-- Dynamisch befüllt -->
+                </div>
+
+                <!-- Produktliste -->
+                <div class="products-list" id="products-list">
+                    <p class="empty-message">Keine Produkte vorhanden</p>
+                </div>
+            </section>
+
+            <!-- TREUEKARTEN SECTION -->
+            <section class="loyalty-section">
+                <div class="section-header">
+                    <h2>Treuekarten (<span id="loyalty-count">0</span>)</h2>
+                </div>
+
+                <!-- Treuekarten-Formular -->
+                <div class="loyalty-form-section">
+                    <h3 id="loyalty-form-title">Neue Treuekarte erstellen</h3>
+
+                    <form id="loyalty-form">
+                        <div class="form-group">
+                            <label for="loyalty-name">Name der Treuekarte *</label>
+                            <input type="text" id="loyalty-name" name="name" required
+                                   placeholder="z.B. Kaffee-Stempelkarte">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="loyalty-type">Kartentyp *</label>
+                                <select id="loyalty-type" name="type" required>
+                                    <option value="buy_n_get_1">Kaufe N, bekomme 1 gratis</option>
+                                    <option value="pay_n_get_m">Zahle N, bekomme M</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="required-purchases-group">
+                                <label for="loyalty-required">Anzahl Käufe bis Gratis *</label>
+                                <input type="number" id="loyalty-required" name="requiredPurchases"
+                                       min="1" value="10" placeholder="10">
+                            </div>
+
+                            <div class="form-group hidden" id="pay-count-group">
+                                <label for="loyalty-pay-count">Zahle Anzahl *</label>
+                                <input type="number" id="loyalty-pay-count" name="payCount"
+                                       min="1" value="5" placeholder="5">
+                            </div>
+
+                            <div class="form-group hidden" id="get-count-group">
+                                <label for="loyalty-get-count">Bekomme Anzahl *</label>
+                                <input type="number" id="loyalty-get-count" name="getCount"
+                                       min="1" value="6" placeholder="6">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="loyalty-binding">Bindung an *</label>
+                                <select id="loyalty-binding" name="bindingType" required>
+                                    <option value="product">Einzelnes Produkt</option>
+                                    <option value="products">Mehrere Produkte (gleicher Preis)</option>
+                                    <option value="category">Kategorie</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="product-binding-group">
+                                <label for="loyalty-product">Produkt *</label>
+                                <select id="loyalty-product" name="productId">
+                                    <!-- Dynamisch befüllt -->
+                                </select>
+                            </div>
+
+                            <div class="form-group hidden" id="products-binding-group">
+                                <label for="loyalty-products">Produkte (gleicher Preis) *</label>
+                                <select id="loyalty-products" name="productIds" multiple size="8">
+                                    <!-- Dynamisch befüllt -->
+                                </select>
+                                <small>Halten Sie Strg/Cmd gedrückt um mehrere auszuwählen</small>
+                            </div>
+
+                            <div class="form-group hidden" id="category-binding-group">
+                                <label for="loyalty-category">Kategorie *</label>
+                                <select id="loyalty-category" name="categoryId">
+                                    <!-- Dynamisch befüllt -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="loyalty-description">Beschreibung (optional)</label>
+                            <input type="text" id="loyalty-description" name="description"
+                                   placeholder="z.B. Jeder 11. Kaffee ist gratis!">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary" id="btn-loyalty-submit">
+                                Treuekarte erstellen
+                            </button>
+                            <button type="button" class="btn-secondary hidden" id="btn-loyalty-cancel">
+                                Abbrechen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Treuekarten-Liste -->
+                <div class="loyalty-list" id="loyalty-list">
+                    <p class="empty-message">Keine Treuekarten vorhanden</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- BILANZ TAB -->
+        <div id="bilanz-tab" class="tab-content">
+            <div class="bilanz-container">
+                <h2>Tagesbilanz</h2>
+
+                <div class="bilanz-summary">
+                    <div class="summary-card">
+                        <h3>Gesamtumsatz</h3>
+                        <p class="big-number" id="bilanz-total">0.00€</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Verkaufte Artikel</h3>
+                        <p class="big-number" id="bilanz-count">0</p>
+                    </div>
+                </div>
+
+                <h3>Aufschlüsselung nach Produkten</h3>
+                <div class="product-breakdown" id="product-breakdown">
+                    <!-- Wird dynamisch gefüllt -->
+                </div>
+
+                <div class="export-section">
+                    <button class="btn-export" id="btn-export">Daten exportieren (JSON)</button>
+                    <button class="btn-import" id="btn-import">Daten importieren</button>
+                    <input type="file" id="file-import" accept=".json" style="display: none;">
+                    <button class="btn-clear" id="btn-clear-day">Heutigen Tag löschen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATISTIK TAB -->
+        <div id="statistik-tab" class="tab-content">
+            <div class="statistik-container">
+                <h2>Statistiken</h2>
+
+                <div class="time-filter">
+                    <button class="filter-btn active" data-filter="today">Heute</button>
+                    <button class="filter-btn" data-filter="week">Diese Woche</button>
+                    <button class="filter-btn" data-filter="all">Gesamt</button>
+                </div>
+
+                <div class="stats-section">
+                    <h3>Top-Seller</h3>
+                    <div class="ranking" id="top-sellers">
+                        <!-- Wird dynamisch gefüllt -->
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>Verkaufte Mengen</h3>
+                    <div class="chart" id="quantity-chart">
+                        <!-- Wird dynamisch gefüllt -->
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>Umsatz nach Produkt</h3>
+                    <div class="chart" id="revenue-chart">
+                        <!-- Wird dynamisch gefüllt -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INVENTAR TAB -->
+        <div id="inventar-tab" class="tab-content">
+            <div class="inventar-container">
+                <h2>Wareneingang & Bestandsübersicht</h2>
+
+                <!-- Wareneingang erfassen -->
+                <section class="inventory-entry-section">
+                    <h3>Wareneingang erfassen</h3>
+                    <form id="inventory-form" class="inventory-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="inventory-product">Produkt *</label>
+                                <select id="inventory-product" name="productId" required>
+                                    <!-- Dynamisch befüllt -->
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="inventory-quantity">Menge *</label>
+                                <input type="number" id="inventory-quantity" name="quantity"
+                                       min="1" required placeholder="z.B. 20">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="inventory-type">Art *</label>
+                                <select id="inventory-type" name="type" required>
+                                    <option value="initial">Anfangsbestand</option>
+                                    <option value="restock">Nachlieferung</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inventory-note">Notiz (optional)</label>
+                            <input type="text" id="inventory-note" name="note"
+                                   placeholder="z.B. Lieferant XY">
+                        </div>
+
+                        <button type="submit" class="btn-primary">Wareneingang eintragen</button>
+                    </form>
+                </section>
+
+                <!-- Tagesübersicht -->
+                <section class="inventory-overview-section">
+                    <h3>Heutige Bestandsübersicht</h3>
+                    <div class="inventory-table-wrapper">
+                        <table class="inventory-table" id="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Produkt</th>
+                                    <th>Eingang</th>
+                                    <th>Verkauft</th>
+                                    <th>Rest</th>
+                                    <th>Ø Verbrauch</th>
+                                    <th>Prognose</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-table-body">
+                                <tr>
+                                    <td colspan="6" class="empty-message">Noch keine Daten für heute</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast für Feedback -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Bestätigungs-Dialog -->
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Bestätigung</h3>
+            <p id="modal-message"></p>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="modal-cancel">Abbrechen</button>
+                <button class="btn-confirm" id="modal-confirm">Bestätigen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="backup-status" style="display: none;"></div>
+
+    <script src="backup.js"></script>
+    <script src="manager.js?v=1768216614788"></script>
+    <script>
+        // Inline tab functionality - guaranteed to work
+        console.log('Inline tab script loaded');
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up tabs...');
+
+            // Get all tab buttons
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            console.log('Found tabs:', tabButtons.length, 'buttons,', tabContents.length, 'contents');
+
+            // Add click handler to each button
+            tabButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    console.log('Clicked tab:', targetTab);
+
+                    // Remove active class from all buttons
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+
+                    // Add active class to clicked button
+                    this.classList.add('active');
+
+                    // Hide all tab contents
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    // Show target tab content
+                    const targetContent = document.getElementById(targetTab + '-tab');
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                        console.log('Activated tab:', targetTab);
+                    } else {
+                        console.error('Tab content not found:', targetTab + '-tab');
+                    }
+                });
+            });
+
+            console.log('✅ Tab handlers attached successfully!');
+        });
+    </script>
+</body>
+</html>

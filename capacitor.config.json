@@ -1,0 +1,10 @@
+{
+  "appId": "com.fosbar.app",
+  "appName": "FOS Bar",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#2563eb"
+  }
+}
