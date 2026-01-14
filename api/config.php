@@ -3,9 +3,17 @@
  * FOS Bar - Konfigurationsdatei
  */
 
+// Session starten
+session_start();
+
 // Fehleranzeige (für Entwicklung - auf Produktion ausschalten)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
+// ============================================
+// PASSWORT HIER ÄNDERN!
+// ============================================
+define('APP_PASSWORD', 'fosbar2024');
 
 // Datenbank-Pfad
 define('DB_PATH', __DIR__ . '/db/fos_bar.sqlite');

@@ -6,16 +6,35 @@
 const API_BASE = 'api/';
 
 /**
+ * Weiterleitung zur Login-Seite bei 401
+ */
+function handleUnauthorized() {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    window.location.href = `login.php?redirect=${encodeURIComponent(currentPage)}`;
+}
+
+/**
+ * Response prüfen und bei 401 zur Login-Seite weiterleiten
+ */
+async function handleResponse(response, action) {
+    if (response.status === 401) {
+        handleUnauthorized();
+        throw new Error('Nicht autorisiert');
+    }
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'API-Fehler');
+    }
+    return await response.json();
+}
+
+/**
  * GET-Request an die API
  */
 async function apiGet(action) {
     try {
         const response = await fetch(`${API_BASE}?action=${action}`);
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'API-Fehler');
-        }
-        return await response.json();
+        return await handleResponse(response, action);
     } catch (error) {
         console.error(`API GET ${action} fehlgeschlagen:`, error);
         throw error;
@@ -34,11 +53,7 @@ async function apiPost(action, data) {
             },
             body: JSON.stringify(data)
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'API-Fehler');
-        }
-        return await response.json();
+        return await handleResponse(response, action);
     } catch (error) {
         console.error(`API POST ${action} fehlgeschlagen:`, error);
         throw error;
@@ -53,11 +68,7 @@ async function apiDelete(action, id) {
         const response = await fetch(`${API_BASE}?action=${action}&id=${encodeURIComponent(id)}`, {
             method: 'DELETE'
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'API-Fehler');
-        }
-        return await response.json();
+        return await handleResponse(response, action);
     } catch (error) {
         console.error(`API DELETE ${action} fehlgeschlagen:`, error);
         throw error;
@@ -76,7 +87,22 @@ async function apiCheckStatus() {
     }
 }
 
+/**
+ * Logout
+ */
+async function apiLogout() {
+    try {
+        await fetch(`${API_BASE}?action=logout`);
+    } catch (error) {
+        console.error('Logout fehlgeschlagen:', error);
+    }
+    window.location.href = 'login.php';
+}
+
+// Global verfügbar machen
+window.apiLogout = apiLogout;
+
 // Export für Module (falls benötigt)
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { apiGet, apiPost, apiDelete, apiCheckStatus };
+    module.exports = { apiGet, apiPost, apiDelete, apiCheckStatus, apiLogout };
 }

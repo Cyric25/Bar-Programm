@@ -10,9 +10,12 @@
  * GET/POST/DELETE ?action=loyalty_card_types
  * GET/POST ?action=inventory
  * GET/POST/DELETE ?action=debtors
+ * POST ?action=login
+ * GET ?action=logout
  */
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/auth.php';
 
 $db = Database::getInstance();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -20,6 +23,28 @@ $action = $_GET['action'] ?? '';
 $id = $_GET['id'] ?? null;
 
 try {
+    // Login/Logout brauchen keine Auth
+    if ($action === 'login') {
+        if ($method === 'POST') {
+            $data = getRequestBody();
+            if (login($data['password'] ?? '')) {
+                jsonResponse(['success' => true]);
+            } else {
+                errorResponse('Falsches Passwort', 401);
+            }
+        }
+        exit();
+    }
+
+    if ($action === 'logout') {
+        logout();
+        jsonResponse(['success' => true]);
+        exit();
+    }
+
+    // Alle anderen Aktionen brauchen Auth
+    requireAuth();
+
     switch ($action) {
         // ============ PRODUCTS ============
         case 'products':
