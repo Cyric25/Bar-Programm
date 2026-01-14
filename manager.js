@@ -10,109 +10,89 @@ let editingCardTypeId = null;
 let editingCategoryId = null;
 let currentCategoryFilter = 'all';
 
-const STORAGE_KEY = 'fos_bar_products';
-const LOYALTY_CARD_TYPES_KEY = 'fos_bar_loyalty_card_types';
-const CATEGORIES_KEY = 'fos_bar_categories';
-
 // ===========================
 // INITIALIZATION
 // ===========================
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Manager.js loaded!');
-    loadCategories();
-    await loadProducts(); // Wait for products to load
-    loadLoyaltyCardTypes();
-    initEventListeners();
-    renderCategories();
-    renderCategorySelectors();
-    renderCategoryFilter();
-    renderProducts();
-    renderLoyaltyCardTypes();
+    try {
+        await loadCategories();
+        await loadProducts();
+        await loadLoyaltyCardTypes();
+        initEventListeners();
+        renderCategories();
+        renderCategorySelectors();
+        renderCategoryFilter();
+        renderProducts();
+        renderLoyaltyCardTypes();
+    } catch (error) {
+        console.error('Initialisierungsfehler:', error);
+        showToast('Fehler beim Laden der Daten. Ist der Server erreichbar?', 'error');
+    }
 });
 
 // ===========================
-// DATA LOADING & SAVING
+// DATA LOADING & SAVING (via API)
 // ===========================
 
 async function loadProducts() {
-    // Try to load from localStorage first
-    const storedProducts = localStorage.getItem(STORAGE_KEY);
-
-    if (storedProducts) {
-        try {
-            products = JSON.parse(storedProducts);
-            console.log('Produkte aus localStorage geladen');
-            return;
-        } catch (error) {
-            console.error('Fehler beim Laden aus localStorage:', error);
-        }
-    }
-
-    // Fallback: Load from products.json
     try {
-        const response = await fetch('products.json');
-        const data = await response.json();
-        products = data.products;
-        saveProducts(); // Save to localStorage
-        console.log('Produkte aus products.json geladen');
+        products = await apiGet('products');
+        console.log('Produkte aus API geladen:', products.length);
     } catch (error) {
         console.error('Fehler beim Laden der Produkte:', error);
         products = [];
     }
 }
 
-function saveProducts() {
+async function saveProducts() {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+        await apiPost('products', products);
+        console.log('Produkte gespeichert:', products.length);
     } catch (error) {
         console.error('Fehler beim Speichern:', error);
         showToast('Fehler beim Speichern der Produkte', 'error');
     }
 }
 
-function loadLoyaltyCardTypes() {
-    const stored = localStorage.getItem(LOYALTY_CARD_TYPES_KEY);
-    if (stored) {
-        try {
-            loyaltyCardTypes = JSON.parse(stored);
-            console.log('Treuekarten-Typen aus localStorage geladen:', loyaltyCardTypes.length);
-        } catch (error) {
-            console.error('Fehler beim Laden der Treuekarten-Typen:', error);
-            loyaltyCardTypes = [];
-        }
+async function loadLoyaltyCardTypes() {
+    try {
+        loyaltyCardTypes = await apiGet('loyalty_card_types');
+        console.log('Treuekarten-Typen aus API geladen:', loyaltyCardTypes.length);
+    } catch (error) {
+        console.error('Fehler beim Laden der Treuekarten-Typen:', error);
+        loyaltyCardTypes = [];
     }
 }
 
-function saveLoyaltyCardTypes() {
+async function saveLoyaltyCardTypes() {
     try {
-        localStorage.setItem(LOYALTY_CARD_TYPES_KEY, JSON.stringify(loyaltyCardTypes));
+        await apiPost('loyalty_card_types', loyaltyCardTypes);
+        console.log('Treuekarten-Typen gespeichert:', loyaltyCardTypes.length);
     } catch (error) {
         console.error('Fehler beim Speichern:', error);
         showToast('Fehler beim Speichern der Treuekarten', 'error');
     }
 }
 
-function loadCategories() {
-    const stored = localStorage.getItem(CATEGORIES_KEY);
-    if (stored) {
-        try {
-            categories = JSON.parse(stored);
-            console.log('Kategorien aus localStorage geladen:', categories.length);
-        } catch (error) {
-            console.error('Fehler beim Laden der Kategorien:', error);
+async function loadCategories() {
+    try {
+        categories = await apiGet('categories');
+        console.log('Kategorien aus API geladen:', categories.length);
+        if (categories.length === 0) {
             categories = getDefaultCategories();
         }
-    } else {
-        // Default categories
+    } catch (error) {
+        console.error('Fehler beim Laden der Kategorien:', error);
         categories = getDefaultCategories();
-        saveCategories();
     }
 }
 
-function saveCategories() {
+async function saveCategories() {
     try {
-        localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+        await apiPost('categories', categories);
+        console.log('Kategorien gespeichert:', categories.length);
     } catch (error) {
         console.error('Fehler beim Speichern:', error);
         showToast('Fehler beim Speichern der Kategorien', 'error');
@@ -1094,15 +1074,13 @@ function switchTab(tabName) {
     }
 }
 
-// Storage keys for sales and inventory (same as in app.js)
-const SALES_STORAGE_KEY = 'fos_bar_sales';
-const INVENTORY_STORAGE_KEY = 'fos_bar_inventory';
+// Bilanz/Statistik/Inventar Funktionen (laden Daten via API)
 
-function renderManagerBilanz() {
+async function renderManagerBilanz() {
     console.log('Loading Bilanz data...');
 
-    // Load sales data from localStorage
-    const sales = loadSalesData();
+    // Load sales data from API
+    const sales = await loadSalesData();
     const todaySales = getTodaySales(sales);
 
     // Update summary
@@ -1119,11 +1097,11 @@ function renderManagerBilanz() {
     renderProductBreakdown(todaySales);
 }
 
-function renderManagerStatistik() {
+async function renderManagerStatistik() {
     console.log('Loading Statistik data...');
 
-    // Load sales data from localStorage
-    const sales = loadSalesData();
+    // Load sales data from API
+    const sales = await loadSalesData();
     const currentFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'today';
     const filteredSales = getFilteredSales(sales, currentFilter);
 
@@ -1142,27 +1120,35 @@ function renderManagerStatistik() {
     });
 }
 
-function renderManagerInventar() {
+async function renderManagerInventar() {
     console.log('Loading Inventar data...');
 
-    // Load inventory and sales data
-    const inventory = loadInventoryData();
-    const sales = loadSalesData();
+    // Load inventory and sales data from API
+    const inventory = await loadInventoryData();
+    const sales = await loadSalesData();
     const todaySales = getTodaySales(sales);
 
     // Render inventory table
     renderInventoryTable(inventory, todaySales);
 }
 
-// Helper functions
-function loadSalesData() {
-    const stored = localStorage.getItem(SALES_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+// Helper functions (API-based)
+async function loadSalesData() {
+    try {
+        return await apiGet('sales');
+    } catch (error) {
+        console.error('Fehler beim Laden der Verkäufe:', error);
+        return [];
+    }
 }
 
-function loadInventoryData() {
-    const stored = localStorage.getItem(INVENTORY_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+async function loadInventoryData() {
+    try {
+        return await apiGet('inventory');
+    } catch (error) {
+        console.error('Fehler beim Laden des Inventars:', error);
+        return [];
+    }
 }
 
 function getTodaySales(sales) {
@@ -1287,9 +1273,7 @@ function renderInventoryTable(inventory, todaySales) {
     const tbody = document.getElementById('inventory-table-body');
     if (!tbody) return;
 
-    // Get products from localStorage
-    const storedProducts = localStorage.getItem('fos_bar_products');
-    const products = storedProducts ? JSON.parse(storedProducts) : [];
+    // Products are already loaded from API into global variable
 
     if (products.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="empty-message">Keine Produkte verfügbar</td></tr>';

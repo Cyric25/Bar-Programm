@@ -18,134 +18,122 @@ let selectedDebtorId = null;
 let showPaidDebts = true;
 let currentDebtAlphabetFilter = 'all';
 
-const STORAGE_KEY = 'fos_bar_sales';
-const PERSONS_STORAGE_KEY = 'fos_bar_persons';
-const LOYALTY_CARD_TYPES_KEY = 'fos_bar_loyalty_card_types';
-const CATEGORIES_KEY = 'fos_bar_categories';
-const INVENTORY_KEY = 'fos_bar_inventory';
-const DEBTORS_STORAGE_KEY = 'fos_bar_debtors';
-
 // ===========================
 // INITIALIZATION
 // ===========================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    loadCategories();
-    await loadProducts();
-    loadSales();
-    await loadPersons();
-    loadLoyaltyCardTypes();
-    loadInventory();
-    await loadDebtors();
-    initEventListeners();
-    updateCurrentDate();
-    renderAll();
+    try {
+        await loadCategories();
+        await loadProducts();
+        await loadSales();
+        await loadPersons();
+        await loadLoyaltyCardTypes();
+        await loadInventory();
+        await loadDebtors();
+        initEventListeners();
+        updateCurrentDate();
+        renderAll();
+    } catch (error) {
+        console.error('Initialisierungsfehler:', error);
+        showToast('Fehler beim Laden der Daten. Ist der Server erreichbar?');
+    }
 });
 
 // ===========================
-// DATA LOADING
+// DATA LOADING (via API)
 // ===========================
 
 async function loadProducts() {
-    // Try to load from localStorage first (managed products)
-    const storedProducts = localStorage.getItem('fos_bar_products');
-
-    if (storedProducts) {
-        try {
-            products = JSON.parse(storedProducts);
-            renderProducts();
-            console.log('Produkte aus localStorage geladen');
-            return;
-        } catch (error) {
-            console.error('Fehler beim Laden aus localStorage:', error);
-        }
-    }
-
-    // Fallback: Load from products.json
     try {
-        const response = await fetch('products.json');
-        const data = await response.json();
-        products = data.products;
+        products = await apiGet('products');
         renderProducts();
-        console.log('Produkte aus products.json geladen');
+        console.log('Produkte aus API geladen:', products.length);
     } catch (error) {
         console.error('Fehler beim Laden der Produkte:', error);
-        showToast('Fehler beim Laden der Produkte');
+        products = [];
     }
 }
 
-function loadSales() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-        try {
-            sales = JSON.parse(stored);
-        } catch (error) {
-            console.error('Fehler beim Laden der Verkäufe:', error);
-            sales = [];
-        }
+async function loadSales() {
+    try {
+        sales = await apiGet('sales');
+        console.log('Verkäufe aus API geladen:', sales.length);
+    } catch (error) {
+        console.error('Fehler beim Laden der Verkäufe:', error);
+        sales = [];
     }
 }
 
-function saveSales() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sales));
+async function saveSales() {
+    try {
+        await apiPost('sales', sales);
+        console.log('Verkäufe gespeichert:', sales.length);
+    } catch (error) {
+        console.error('Fehler beim Speichern der Verkäufe:', error);
+        showToast('Fehler beim Speichern');
+    }
+}
+
+async function addSaleToServer(sale) {
+    try {
+        const savedSale = await apiPost('sales', sale);
+        return savedSale;
+    } catch (error) {
+        console.error('Fehler beim Speichern des Verkaufs:', error);
+        throw error;
+    }
 }
 
 async function loadPersons() {
-    // Try to load from localStorage first (managed persons)
-    const stored = localStorage.getItem(PERSONS_STORAGE_KEY);
-
-    if (stored) {
-        try {
-            persons = JSON.parse(stored);
-            console.log('Personen aus localStorage geladen:', persons.length);
-            return;
-        } catch (error) {
-            console.error('Fehler beim Laden aus localStorage:', error);
-        }
-    }
-
-    // Fallback: Load from persons.json
     try {
-        const response = await fetch('persons.json');
-        const data = await response.json();
-        persons = data.persons || [];
-        console.log('Personen aus persons.json geladen:', persons.length);
+        persons = await apiGet('persons');
+        console.log('Personen aus API geladen:', persons.length);
     } catch (error) {
         console.error('Fehler beim Laden der Personen:', error);
-        // If no file exists, start with empty array
         persons = [];
     }
 }
 
-function savePersons() {
-    localStorage.setItem(PERSONS_STORAGE_KEY, JSON.stringify(persons));
-    console.log('Personen gespeichert:', persons.length);
-}
-
-function loadLoyaltyCardTypes() {
-    const stored = localStorage.getItem(LOYALTY_CARD_TYPES_KEY);
-    if (stored) {
-        try {
-            loyaltyCardTypes = JSON.parse(stored);
-            console.log('Treuekarten-Typen geladen:', loyaltyCardTypes.length);
-        } catch (error) {
-            console.error('Fehler beim Laden der Treuekarten-Typen:', error);
-            loyaltyCardTypes = [];
-        }
+async function savePersons() {
+    try {
+        await apiPost('persons', persons);
+        console.log('Personen gespeichert:', persons.length);
+    } catch (error) {
+        console.error('Fehler beim Speichern der Personen:', error);
+        showToast('Fehler beim Speichern');
     }
 }
 
-function loadCategories() {
-    const stored = localStorage.getItem(CATEGORIES_KEY);
-    if (stored) {
-        try {
-            categories = JSON.parse(stored);
-            console.log('Kategorien geladen:', categories.length);
-        } catch (error) {
-            console.error('Fehler beim Laden der Kategorien:', error);
+async function savePerson(person) {
+    try {
+        await apiPost('persons', person);
+        console.log('Person gespeichert:', person.name);
+    } catch (error) {
+        console.error('Fehler beim Speichern der Person:', error);
+        showToast('Fehler beim Speichern');
+    }
+}
+
+async function loadLoyaltyCardTypes() {
+    try {
+        loyaltyCardTypes = await apiGet('loyalty_card_types');
+        console.log('Treuekarten-Typen aus API geladen:', loyaltyCardTypes.length);
+    } catch (error) {
+        console.error('Fehler beim Laden der Treuekarten-Typen:', error);
+        loyaltyCardTypes = [];
+    }
+}
+
+async function loadCategories() {
+    try {
+        categories = await apiGet('categories');
+        console.log('Kategorien aus API geladen:', categories.length);
+        if (categories.length === 0) {
             categories = getDefaultCategories();
         }
-    } else {
+    } catch (error) {
+        console.error('Fehler beim Laden der Kategorien:', error);
         categories = getDefaultCategories();
     }
 }
@@ -158,95 +146,54 @@ function getDefaultCategories() {
     ];
 }
 
-function loadInventory() {
-    const stored = localStorage.getItem(INVENTORY_KEY);
-    if (stored) {
-        try {
-            inventory = JSON.parse(stored);
-            console.log('Inventar geladen:', inventory.length);
-        } catch (error) {
-            console.error('Fehler beim Laden des Inventars:', error);
-            inventory = [];
-        }
+async function loadInventory() {
+    try {
+        inventory = await apiGet('inventory');
+        console.log('Inventar aus API geladen:', inventory.length);
+    } catch (error) {
+        console.error('Fehler beim Laden des Inventars:', error);
+        inventory = [];
     }
 }
 
-function saveInventory() {
-    localStorage.setItem(INVENTORY_KEY, JSON.stringify(inventory));
+async function saveInventory() {
+    try {
+        await apiPost('inventory', inventory);
+        console.log('Inventar gespeichert:', inventory.length);
+    } catch (error) {
+        console.error('Fehler beim Speichern des Inventars:', error);
+        showToast('Fehler beim Speichern');
+    }
 }
 
 async function loadDebtors() {
-    // Load index first
-    const indexStr = localStorage.getItem(DEBTORS_STORAGE_KEY + '_index');
-
-    if (indexStr) {
-        try {
-            const index = JSON.parse(indexStr);
-            console.log('Lade', index.length, 'Schuldner aus separaten Dateien...');
-
-            debtors = [];
-            index.forEach(item => {
-                const debtorStr = localStorage.getItem(DEBTORS_STORAGE_KEY + '_' + item.id);
-                if (debtorStr) {
-                    try {
-                        debtors.push(JSON.parse(debtorStr));
-                    } catch (error) {
-                        console.error('Fehler beim Laden von Schuldner', item.id, ':', error);
-                    }
-                }
-            });
-
-            console.log('Schuldner aus localStorage geladen:', debtors.length);
-        } catch (error) {
-            console.error('Fehler beim Laden der Schuldner:', error);
-            // Try old format as fallback
-            await loadDebtorsLegacy();
-        }
-    } else {
-        // Try old format as fallback
-        await loadDebtorsLegacy();
+    try {
+        debtors = await apiGet('debtors');
+        console.log('Schuldner aus API geladen:', debtors.length);
+    } catch (error) {
+        console.error('Fehler beim Laden der Schuldner:', error);
+        debtors = [];
     }
 }
 
-// Fallback function to load old format and migrate
-async function loadDebtorsLegacy() {
-    const stored = localStorage.getItem(DEBTORS_STORAGE_KEY);
-    if (stored) {
-        try {
-            debtors = JSON.parse(stored);
-            console.log('Schuldner aus altem Format geladen:', debtors.length);
-            console.log('Migriere zu neuem Format...');
-            saveDebtors(); // Save in new format
-            // Remove old format
-            localStorage.removeItem(DEBTORS_STORAGE_KEY);
-            console.log('Migration abgeschlossen');
-        } catch (error) {
-            console.error('Fehler beim Laden der Schuldner (Legacy):', error);
-            debtors = [];
-        }
+async function saveDebtors() {
+    try {
+        await apiPost('debtors', debtors);
+        console.log('Schuldner gespeichert:', debtors.length);
+    } catch (error) {
+        console.error('Fehler beim Speichern der Schuldner:', error);
+        showToast('Fehler beim Speichern');
     }
 }
 
-function saveDebtors() {
-    // Save index with all debtor IDs
-    const debtorIndex = debtors.map(d => ({
-        id: d.id,
-        name: d.name,
-        debt: d.debt,
-        isPaid: d.isPaid,
-        lastModified: new Date().toISOString()
-    }));
-    localStorage.setItem(DEBTORS_STORAGE_KEY + '_index', JSON.stringify(debtorIndex));
-
-    // Save each debtor in separate localStorage entry
-    debtors.forEach(debtor => {
-        localStorage.setItem(
-            DEBTORS_STORAGE_KEY + '_' + debtor.id,
-            JSON.stringify(debtor)
-        );
-    });
-
-    console.log('Schuldner gespeichert:', debtors.length, '(in separaten Dateien)');
+async function saveDebtor(debtor) {
+    try {
+        await apiPost('debtors', debtor);
+        console.log('Schuldner gespeichert:', debtor.name);
+    } catch (error) {
+        console.error('Fehler beim Speichern des Schuldners:', error);
+        showToast('Fehler beim Speichern');
+    }
 }
 
 // ===========================
