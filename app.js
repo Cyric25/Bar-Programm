@@ -1020,64 +1020,102 @@ function handleCreditsFormSubmit(e) {
     const formData = new FormData(e.target);
     const name = formData.get('person-name').trim();
     const amount = parseEuro(formData.get('credit-amount'));
+    const loyaltyCardTypeId = formData.get('loyalty-card') || null;
 
-    console.log('Name:', name, 'Amount:', amount);
+    console.log('Name:', name, 'Amount:', amount, 'LoyaltyCard:', loyaltyCardTypeId);
 
     if (!name) {
         showToast('Bitte Namen eingeben');
         return;
     }
 
-    if (amount <= 0) {
-        showToast('Bitte gültigen Betrag eingeben');
+    // Erlaubt: Betrag > 0 ODER Treuekarte ausgewählt
+    if (amount <= 0 && !loyaltyCardTypeId) {
+        showToast('Bitte Betrag eingeben oder Treuekarte auswählen');
         return;
     }
 
     console.log('Rufe addCredit auf...');
-    addCredit(name, amount);
+    addCredit(name, amount, loyaltyCardTypeId);
     closeCreditModal();
 }
 
-function addCredit(name, amount) {
-    console.log('addCredit aufgerufen mit:', name, amount);
+function addCredit(name, amount, loyaltyCardTypeId = null) {
+    console.log('addCredit aufgerufen mit:', name, amount, loyaltyCardTypeId);
     console.log('Aktuelle persons array:', persons);
 
     let person = persons.find(p => p.name.toLowerCase() === name.toLowerCase());
+    let isNewPerson = false;
 
     if (person) {
         console.log('Person gefunden, aktualisiere Guthaben');
-        person.balance += amount;
-        person.transactions.push({
-            id: generateId(),
-            type: 'credit',
-            amount: amount,
-            timestamp: new Date().toISOString(),
-            note: 'Guthaben aufgeladen'
-        });
+        if (amount > 0) {
+            person.balance += amount;
+            person.transactions.push({
+                id: generateId(),
+                type: 'credit',
+                amount: amount,
+                timestamp: new Date().toISOString(),
+                note: 'Guthaben aufgeladen'
+            });
+        }
     } else {
         console.log('Neue Person wird erstellt');
+        isNewPerson = true;
         person = {
             id: generateId(),
             name: name,
             balance: amount,
-            transactions: [{
+            transactions: amount > 0 ? [{
                 id: generateId(),
                 type: 'credit',
                 amount: amount,
                 timestamp: new Date().toISOString(),
                 note: 'Erstmaliges Aufladen'
-            }],
+            }] : [],
+            loyaltyCards: [],
             createdAt: new Date().toISOString()
         };
         persons.push(person);
         console.log('Person hinzugefügt, neue persons array:', persons);
     }
 
+    // Treuekarte hinzufügen falls ausgewählt
+    if (loyaltyCardTypeId) {
+        ensureLoyaltyCardsArray(person);
+        const hasCard = person.loyaltyCards.some(lc => lc.cardTypeId === loyaltyCardTypeId);
+        if (!hasCard) {
+            const cardType = loyaltyCardTypes.find(ct => ct.id === loyaltyCardTypeId);
+            if (cardType) {
+                person.loyaltyCards.push({
+                    id: generateId(),
+                    cardTypeId: loyaltyCardTypeId,
+                    currentStamps: 0,
+                    completedCards: 0,
+                    history: [],
+                    createdAt: new Date().toISOString()
+                });
+            }
+        }
+    }
+
     console.log('Rufe savePersons auf...');
     savePersons();
     console.log('Rufe renderAll auf...');
     renderAll();
-    showToast(`${formatPrice(amount)} für ${name} aufgeladen`);
+
+    // Toast-Nachricht anpassen
+    let message = '';
+    if (amount > 0 && loyaltyCardTypeId) {
+        const cardType = loyaltyCardTypes.find(ct => ct.id === loyaltyCardTypeId);
+        message = `${formatPrice(amount)} aufgeladen + Treuekarte "${cardType?.name}" für ${name}`;
+    } else if (amount > 0) {
+        message = `${formatPrice(amount)} für ${name} aufgeladen`;
+    } else if (loyaltyCardTypeId) {
+        const cardType = loyaltyCardTypes.find(ct => ct.id === loyaltyCardTypeId);
+        message = `Treuekarte "${cardType?.name}" für ${name} erstellt`;
+    }
+    showToast(message);
 }
 
 function chargePersonForSale(personId, sale) {
@@ -1333,6 +1371,17 @@ function renderCreditsPersonsGrid() {
     if (!document.querySelector('.alphabet-btn[data-letter="A"]')) {
         initAlphabetFilter();
     }
+
+    // Live-Aktualisierung der Detailansicht wenn Person ausgewählt
+    if (selectedPersonId) {
+        const selectedPerson = persons.find(p => p.id === selectedPersonId);
+        if (selectedPerson) {
+            const balanceElement = document.getElementById('credits-info-person-balance');
+            if (balanceElement) {
+                balanceElement.textContent = formatPrice(selectedPerson.balance);
+            }
+        }
+    }
 }
 
 function selectCreditsPersonById(personId) {
@@ -1523,7 +1572,26 @@ function handleCreditsPurchase(personId, product) {
 
 function showAddCreditDialog() {
     console.log('showAddCreditDialog called');
+    // Treuekarten-Dropdown befüllen
+    populateLoyaltyCardSelect();
     document.getElementById('credit-modal').classList.add('show');
+}
+
+function populateLoyaltyCardSelect() {
+    const select = document.getElementById('credit-loyalty-card');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">-- Keine Treuekarte --</option>';
+
+    // Nur aktive Treuekarten anzeigen
+    const activeCards = loyaltyCardTypes.filter(ct => ct.isActive !== false);
+
+    activeCards.forEach(cardType => {
+        const option = document.createElement('option');
+        option.value = cardType.id;
+        option.textContent = cardType.name + (cardType.description ? ` (${cardType.description})` : '');
+        select.appendChild(option);
+    });
 }
 
 function closeCreditModal() {
@@ -2416,6 +2484,11 @@ function renderDebtorsGrid() {
     // Initialize alphabet filter if not done yet
     if (!document.querySelector('#debt-alphabet-filter .alphabet-btn[data-letter="A"]')) {
         initDebtAlphabetFilter();
+    }
+
+    // Live-Aktualisierung der Detailansicht wenn Schuldner ausgewählt
+    if (selectedDebtorId) {
+        updateDebtInfo(selectedDebtorId);
     }
 }
 

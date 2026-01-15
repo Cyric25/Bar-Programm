@@ -268,16 +268,22 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="credit-amount">Betrag (€) *</label>
+                    <label for="credit-amount">Betrag (€)</label>
                     <input
                         type="text"
                         inputmode="decimal"
                         id="credit-amount"
                         name="credit-amount"
-                        required
-                        placeholder="10,00"
+                        placeholder="10,00 (oder 0 für nur Treuekarte)"
                         pattern="[0-9]*[,.]?[0-9]*"
                     >
+                </div>
+
+                <div class="form-group">
+                    <label for="credit-loyalty-card">Treuekarte (optional)</label>
+                    <select id="credit-loyalty-card" name="loyalty-card">
+                        <option value="">-- Keine Treuekarte --</option>
+                    </select>
                 </div>
 
                 <div class="modal-actions">
