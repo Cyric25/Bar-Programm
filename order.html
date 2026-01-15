@@ -579,10 +579,13 @@
 
             // Build items array
             const items = [];
+            let totalPrice = 0;
             for (const productId in quantities) {
                 if (quantities[productId] > 0) {
                     const product = products.find(p => p.id === productId);
                     if (product) {
+                        const itemTotal = product.price * quantities[productId];
+                        totalPrice += itemTotal;
                         items.push({
                             productId: product.id,
                             productName: product.name,
@@ -608,7 +611,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         customerName: customerName,
-                        items: items
+                        items: items,
+                        totalPrice: totalPrice
                     })
                 });
 

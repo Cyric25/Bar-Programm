@@ -1834,7 +1834,15 @@ async function createUser(userData) {
 
 async function updateUser(userId, userData) {
     try {
-        const result = await apiPost(`users&id=${userId}`, userData);
+        const response = await fetch(`api/?action=users&id=${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || 'Fehler beim Aktualisieren');
+        }
         const index = users.findIndex(u => u.id === userId);
         if (index !== -1) {
             users[index] = result;
@@ -1887,9 +1895,16 @@ function deleteUser(userId) {
         `Möchten Sie "${user.display_name || user.username}" wirklich löschen?`,
         async () => {
             try {
-                await apiDelete(`users&id=${userId}`);
+                const response = await fetch(`api/?action=users&id=${userId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'Fehler beim Löschen');
+                }
                 users = users.filter(u => u.id !== userId);
                 renderUsers();
+                populateActivityUserFilter();
                 showToast('Benutzer wurde gelöscht', 'success');
             } catch (error) {
                 console.error('Fehler beim Löschen:', error);
@@ -1924,7 +1939,7 @@ function resetUserForm() {
 
 async function loadActivityLog(userId = null) {
     try {
-        let url = 'activity_log?limit=50';
+        let url = 'activity_log&limit=50';
         if (userId) {
             url += `&user_id=${userId}`;
         }
@@ -2242,7 +2257,15 @@ function renderPreordersList() {
 
 async function updatePreorderStatus(orderId, status) {
     try {
-        await apiPost(`preorders&id=${orderId}`, { status: status });
+        const response = await fetch(`api/?action=preorders&id=${orderId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: status })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || 'Fehler beim Aktualisieren');
+        }
         showToast('Status aktualisiert');
 
         // Reload
