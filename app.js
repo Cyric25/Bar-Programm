@@ -1,4 +1,19 @@
 // ===========================
+// HELPER FUNCTIONS
+// ===========================
+
+/**
+ * Parst einen Euro-Betrag (akzeptiert Komma und Punkt als Dezimaltrennzeichen)
+ */
+function parseEuro(value) {
+    if (value === null || value === undefined || value === '') return 0;
+    // Komma durch Punkt ersetzen
+    const normalized = String(value).replace(',', '.');
+    const parsed = parseFloat(normalized);
+    return isNaN(parsed) ? 0 : parsed;
+}
+
+// ===========================
 // STATE & STORAGE
 // ===========================
 
@@ -168,7 +183,12 @@ async function saveInventory() {
 
 async function loadDebtors() {
     try {
-        debtors = await apiGet('debtors');
+        const rawDebtors = await apiGet('debtors');
+        // Mapping: totalDebt aus API -> debt für JavaScript
+        debtors = rawDebtors.map(d => ({
+            ...d,
+            debt: d.totalDebt ?? d.debt ?? 0
+        }));
         console.log('Schuldner aus API geladen:', debtors.length);
     } catch (error) {
         console.error('Fehler beim Laden der Schuldner:', error);
@@ -178,7 +198,12 @@ async function loadDebtors() {
 
 async function saveDebtors() {
     try {
-        await apiPost('debtors', debtors);
+        // Mapping: debt -> totalDebt für API
+        const apiDebtors = debtors.map(d => ({
+            ...d,
+            totalDebt: d.debt
+        }));
+        await apiPost('debtors', apiDebtors);
         console.log('Schuldner gespeichert:', debtors.length);
     } catch (error) {
         console.error('Fehler beim Speichern der Schuldner:', error);
@@ -188,7 +213,12 @@ async function saveDebtors() {
 
 async function saveDebtor(debtor) {
     try {
-        await apiPost('debtors', debtor);
+        // Mapping: debt -> totalDebt für API
+        const apiDebtor = {
+            ...debtor,
+            totalDebt: debtor.debt
+        };
+        await apiPost('debtors', apiDebtor);
         console.log('Schuldner gespeichert:', debtor.name);
     } catch (error) {
         console.error('Fehler beim Speichern des Schuldners:', error);
@@ -989,7 +1019,7 @@ function handleCreditsFormSubmit(e) {
 
     const formData = new FormData(e.target);
     const name = formData.get('person-name').trim();
-    const amount = parseFloat(formData.get('credit-amount'));
+    const amount = parseEuro(formData.get('credit-amount'));
 
     console.log('Name:', name, 'Amount:', amount);
 
@@ -998,7 +1028,7 @@ function handleCreditsFormSubmit(e) {
         return;
     }
 
-    if (isNaN(amount) || amount <= 0) {
+    if (amount <= 0) {
         showToast('Bitte gültigen Betrag eingeben');
         return;
     }
@@ -2012,7 +2042,7 @@ function handleDebtorFormSubmit(e) {
 
     const formData = new FormData(e.target);
     const name = formData.get('debtor-name').trim();
-    const initialDebt = parseFloat(formData.get('initial-debt')) || 0;
+    const initialDebt = parseEuro(formData.get('initial-debt'));
 
     if (!name) {
         showToast('Bitte Namen eingeben');
@@ -2141,10 +2171,10 @@ function handleAddDebtAmountFormSubmit(e) {
     }
 
     const formData = new FormData(e.target);
-    const amount = parseFloat(formData.get('debt-amount'));
+    const amount = parseEuro(formData.get('debt-amount'));
     const note = formData.get('debt-note').trim();
 
-    if (isNaN(amount) || amount <= 0) {
+    if (amount <= 0) {
         showToast('Bitte gültigen Betrag eingeben');
         return;
     }
@@ -2221,9 +2251,9 @@ function handlePayDebtFormSubmit(e) {
     }
 
     const formData = new FormData(e.target);
-    const amount = parseFloat(formData.get('payment-amount'));
+    const amount = parseEuro(formData.get('payment-amount'));
 
-    if (isNaN(amount) || amount < 0) {
+    if (amount < 0) {
         showToast('Bitte gültigen Betrag eingeben');
         return;
     }

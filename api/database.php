@@ -248,8 +248,10 @@ class Database {
             INSERT INTO sales (name, price, timestamp, payment_method, person_id, loyalty_stamps)
             VALUES (?, ?, ?, ?, ?, ?)
         ");
+        // Akzeptiere sowohl 'name' als auch 'productName'
+        $name = $sale['name'] ?? $sale['productName'] ?? '';
         $stmt->execute([
-            $sale['name'],
+            $name,
             $sale['price'],
             $sale['timestamp'],
             $sale['paymentMethod'] ?? 'cash',
@@ -269,8 +271,10 @@ class Database {
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
             foreach ($sales as $sale) {
+                // Akzeptiere sowohl 'name' als auch 'productName'
+                $name = $sale['name'] ?? $sale['productName'] ?? '';
                 $stmt->execute([
-                    $sale['name'],
+                    $name,
                     $sale['price'],
                     $sale['timestamp'],
                     $sale['paymentMethod'] ?? 'cash',

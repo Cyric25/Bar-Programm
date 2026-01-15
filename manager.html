@@ -92,13 +92,13 @@
                         <div class="form-group">
                             <label for="product-price">Preis (€) *</label>
                             <input
-                                type="number"
+                                type="text"
+                                inputmode="decimal"
                                 id="product-price"
                                 name="price"
-                                step="0.01"
-                                min="0"
                                 required
-                                placeholder="1.50"
+                                placeholder="1,50"
+                                pattern="[0-9]*[,.]?[0-9]*"
                             >
                         </div>
 
@@ -412,8 +412,7 @@
     <div id="backup-status" style="display: none;"></div>
 
     <script src="api-client.js"></script>
-    <script src="backup.js"></script>
-    <script src="manager.js?v=1768216614789"></script>
+    <script src="manager.js?v=1768234555"></script>
     <script>
         // Inline tab functionality - guaranteed to work
         console.log('Inline tab script loaded');

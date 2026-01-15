@@ -3,12 +3,29 @@
  * FOS Bar - Konfigurationsdatei
  */
 
+// Fehler als JSON ausgeben, nicht als HTML
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Eigener Error-Handler für JSON-Ausgabe
+set_error_handler(function($severity, $message, $file, $line) {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+set_exception_handler(function($e) {
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'error' => 'Server-Fehler: ' . $e->getMessage(),
+        'file' => basename($e->getFile()),
+        'line' => $e->getLine()
+    ], JSON_UNESCAPED_UNICODE);
+    exit();
+});
+
 // Session starten
 session_start();
-
-// Fehleranzeige (für Entwicklung - auf Produktion ausschalten)
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
 // ============================================
 // PASSWORT HIER ÄNDERN!

@@ -270,13 +270,13 @@
                 <div class="form-group">
                     <label for="credit-amount">Betrag (€) *</label>
                     <input
-                        type="number"
+                        type="text"
+                        inputmode="decimal"
                         id="credit-amount"
                         name="credit-amount"
-                        step="0.50"
-                        min="0"
                         required
-                        placeholder="10.00"
+                        placeholder="10,00"
+                        pattern="[0-9]*[,.]?[0-9]*"
                     >
                 </div>
 
@@ -310,12 +310,12 @@
                 <div class="form-group">
                     <label for="initial-debt">Initiale Schuld (€, optional)</label>
                     <input
-                        type="number"
+                        type="text"
+                        inputmode="decimal"
                         id="initial-debt"
                         name="initial-debt"
-                        step="0.50"
-                        min="0"
-                        placeholder="0.00"
+                        placeholder="0,00"
+                        pattern="[0-9]*[,.]?[0-9]*"
                     >
                     <small>Betrag eingeben, wenn bereits Schulden bestehen</small>
                 </div>
@@ -336,13 +336,13 @@
                 <div class="form-group">
                     <label for="debt-amount">Betrag (€) *</label>
                     <input
-                        type="number"
+                        type="text"
+                        inputmode="decimal"
                         id="debt-amount"
                         name="debt-amount"
-                        step="0.50"
-                        min="0.01"
                         required
-                        placeholder="10.00"
+                        placeholder="10,00"
+                        pattern="[0-9]*[,.]?[0-9]*"
                     >
                 </div>
 
@@ -373,13 +373,13 @@
                 <div class="form-group">
                     <label for="payment-amount">Betrag (€) *</label>
                     <input
-                        type="number"
+                        type="text"
+                        inputmode="decimal"
                         id="payment-amount"
                         name="payment-amount"
-                        step="0.50"
-                        min="0"
                         required
-                        placeholder="10.00"
+                        placeholder="10,00"
+                        pattern="[0-9]*[,.]?[0-9]*"
                     >
                     <small>0€ eingeben = Schuld als beglichen markieren (ohne Zahlung)</small>
                 </div>
@@ -401,8 +401,7 @@
     <div id="backup-status" style="display: none;"></div>
 
     <script src="api-client.js"></script>
-    <script src="backup.js"></script>
-    <script src="app.js?v=1768234554"></script>
+    <script src="app.js?v=1768234555"></script>
     <script>
         // Inline Tab Fallback - runs after app.js
         console.log('🔄 Index.html inline tab script loaded');

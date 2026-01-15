@@ -11,6 +11,19 @@ let editingCategoryId = null;
 let currentCategoryFilter = 'all';
 
 // ===========================
+// HELPER FUNCTIONS
+// ===========================
+
+// Parst Euro-Beträge: akzeptiert Komma oder Punkt als Dezimaltrennzeichen
+function parseEuro(value) {
+    if (value === null || value === undefined || value === '') return 0;
+    // Ersetze Komma durch Punkt für parseFloat
+    const normalized = String(value).replace(',', '.');
+    const parsed = parseFloat(normalized);
+    return isNaN(parsed) ? 0 : parsed;
+}
+
+// ===========================
 // INITIALIZATION
 // ===========================
 
@@ -177,7 +190,7 @@ function handleFormSubmit(e) {
     const sortOrder = formData.get('sortOrder');
     const productData = {
         name: formData.get('name').trim(),
-        price: parseFloat(formData.get('price')),
+        price: parseEuro(formData.get('price')),
         category: formData.get('category'),
         sortOrder: sortOrder ? parseInt(sortOrder) : undefined
     };
