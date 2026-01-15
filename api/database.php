@@ -252,6 +252,11 @@ class Database {
     }
 
     public function addSale($sale) {
+        // Validierung: Prüfe ob erforderliche Felder vorhanden sind
+        if (empty($sale) || !isset($sale['price']) || !isset($sale['timestamp'])) {
+            throw new Exception('Ungültige Verkaufsdaten: price und timestamp erforderlich');
+        }
+
         $stmt = $this->pdo->prepare("
             INSERT INTO sales (name, price, timestamp, payment_method, person_id, loyalty_stamps)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -274,11 +279,22 @@ class Database {
         $this->pdo->beginTransaction();
         try {
             $this->pdo->exec("DELETE FROM sales");
+
+            // Wenn keine Verkäufe, einfach committen (alle gelöscht)
+            if (empty($sales)) {
+                $this->pdo->commit();
+                return true;
+            }
+
             $stmt = $this->pdo->prepare("
                 INSERT INTO sales (name, price, timestamp, payment_method, person_id, loyalty_stamps)
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
             foreach ($sales as $sale) {
+                // Überspringe ungültige Einträge
+                if (!is_array($sale) || !isset($sale['price']) || !isset($sale['timestamp'])) {
+                    continue;
+                }
                 // Akzeptiere sowohl 'name' als auch 'productName'
                 $name = $sale['name'] ?? $sale['productName'] ?? '';
                 $stmt->execute([

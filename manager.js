@@ -10,6 +10,10 @@ let editingCardTypeId = null;
 let editingCategoryId = null;
 let currentCategoryFilter = 'all';
 
+// Bilanz Zeitraum-State
+let bilanzPeriodType = 'day'; // 'day', 'week', 'month'
+let bilanzPeriodOffset = 0;   // 0 = aktuell, -1 = vorherige Periode, etc.
+
 // ===========================
 // HELPER FUNCTIONS
 // ===========================
@@ -154,12 +158,29 @@ function initEventListeners() {
     // Cancel button
     document.getElementById('btn-cancel').addEventListener('click', resetForm);
 
-    // Export/Import
+    // Produkt Export/Import (Verwaltung Tab)
     document.getElementById('btn-export').addEventListener('click', exportProducts);
     document.getElementById('btn-import').addEventListener('click', () => {
         document.getElementById('file-import').click();
     });
     document.getElementById('file-import').addEventListener('change', importProducts);
+
+    // Bilanz: Zeitraum-Auswahl
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', () => setBilanzPeriodType(btn.dataset.period));
+    });
+
+    // Bilanz: Navigation
+    const prevBtn = document.getElementById('period-prev');
+    const nextBtn = document.getElementById('period-next');
+    if (prevBtn) prevBtn.addEventListener('click', () => navigateBilanzPeriod(-1));
+    if (nextBtn) nextBtn.addEventListener('click', () => navigateBilanzPeriod(1));
+
+    // Bilanz: Export
+    const exportPeriodBtn = document.getElementById('btn-export-period');
+    const exportCsvBtn = document.getElementById('btn-export-csv');
+    if (exportPeriodBtn) exportPeriodBtn.addEventListener('click', exportPeriodData);
+    if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportFullDatabaseCSV);
 
     // Modal
     document.getElementById('modal-cancel').addEventListener('click', closeModal);
@@ -1097,25 +1118,259 @@ function switchTab(tabName) {
 
 // Bilanz/Statistik/Inventar Funktionen (laden Daten via API)
 
+// ===== BILANZ ZEITRAUM-FUNKTIONEN =====
+
+function getBilanzPeriodDates() {
+    const now = new Date();
+    let startDate, endDate, label;
+
+    if (bilanzPeriodType === 'day') {
+        const targetDate = new Date(now);
+        targetDate.setDate(targetDate.getDate() + bilanzPeriodOffset);
+
+        startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0);
+        endDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59);
+
+        if (bilanzPeriodOffset === 0) {
+            label = 'Heute';
+        } else if (bilanzPeriodOffset === -1) {
+            label = 'Gestern';
+        } else {
+            label = targetDate.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+    } else if (bilanzPeriodType === 'week') {
+        const targetDate = new Date(now);
+        targetDate.setDate(targetDate.getDate() + (bilanzPeriodOffset * 7));
+
+        // Montag dieser Woche
+        const dayOfWeek = targetDate.getDay() || 7;
+        const monday = new Date(targetDate);
+        monday.setDate(targetDate.getDate() - dayOfWeek + 1);
+
+        startDate = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate(), 0, 0, 0);
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        endDate = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate(), 23, 59, 59);
+
+        if (bilanzPeriodOffset === 0) {
+            label = 'Diese Woche';
+        } else if (bilanzPeriodOffset === -1) {
+            label = 'Letzte Woche';
+        } else {
+            label = `${startDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} - ${endDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+        }
+    } else if (bilanzPeriodType === 'month') {
+        const targetDate = new Date(now.getFullYear(), now.getMonth() + bilanzPeriodOffset, 1);
+
+        startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1, 0, 0, 0);
+        endDate = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59);
+
+        const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+                           'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+        if (bilanzPeriodOffset === 0) {
+            label = 'Dieser Monat';
+        } else if (bilanzPeriodOffset === -1) {
+            label = 'Letzter Monat';
+        } else {
+            label = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
+        }
+    }
+
+    return { startDate, endDate, label };
+}
+
+function setBilanzPeriodType(type) {
+    bilanzPeriodType = type;
+    bilanzPeriodOffset = 0;
+
+    // Update button states
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.period === type);
+    });
+
+    renderManagerBilanz();
+}
+
+function navigateBilanzPeriod(direction) {
+    bilanzPeriodOffset += direction;
+    // Keine zukünftigen Perioden erlauben
+    if (bilanzPeriodOffset > 0) bilanzPeriodOffset = 0;
+    renderManagerBilanz();
+}
+
+function filterSalesByPeriod(sales, startDate, endDate) {
+    return sales.filter(sale => {
+        const saleDate = new Date(sale.timestamp);
+        return saleDate >= startDate && saleDate <= endDate;
+    });
+}
+
 async function renderManagerBilanz() {
     console.log('Loading Bilanz data...');
 
     // Load sales data from API
     const sales = await loadSalesData();
-    const todaySales = getTodaySales(sales);
+    const { startDate, endDate, label } = getBilanzPeriodDates();
+    const periodSales = filterSalesByPeriod(sales, startDate, endDate);
+
+    // Update period label
+    const periodLabel = document.getElementById('period-label');
+    if (periodLabel) periodLabel.textContent = label;
 
     // Update summary
-    const totalRevenue = todaySales.reduce((sum, sale) => sum + sale.price, 0);
-    const totalCount = todaySales.length;
+    const totalRevenue = periodSales.reduce((sum, sale) => sum + sale.price, 0);
+    const totalCount = periodSales.length;
 
     const bilanzTotal = document.getElementById('bilanz-total');
     const bilanzCount = document.getElementById('bilanz-count');
 
-    if (bilanzTotal) bilanzTotal.textContent = totalRevenue.toFixed(2) + '€';
+    if (bilanzTotal) bilanzTotal.textContent = formatPrice(totalRevenue);
     if (bilanzCount) bilanzCount.textContent = totalCount;
 
+    // Update payment breakdown
+    const cashTotal = periodSales.filter(s => s.paymentMethod === 'cash').reduce((sum, s) => sum + s.price, 0);
+    const creditTotal = periodSales.filter(s => s.paymentMethod === 'credit').reduce((sum, s) => sum + s.price, 0);
+    const debtTotal = periodSales.filter(s => s.paymentMethod === 'debt').reduce((sum, s) => sum + s.price, 0);
+
+    const paymentBreakdown = document.getElementById('payment-breakdown');
+    if (paymentBreakdown) {
+        paymentBreakdown.innerHTML = `
+            <span class="payment-item">Bar: ${formatPrice(cashTotal)}</span>
+            <span class="payment-item">Guthaben: ${formatPrice(creditTotal)}</span>
+            <span class="payment-item">Schuld: ${formatPrice(debtTotal)}</span>
+        `;
+    }
+
     // Render product breakdown
-    renderProductBreakdown(todaySales);
+    renderProductBreakdown(periodSales);
+}
+
+function formatPrice(value) {
+    return value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+
+// ===== EXPORT FUNKTIONEN =====
+
+async function exportPeriodData() {
+    const sales = await loadSalesData();
+    const { startDate, endDate, label } = getBilanzPeriodDates();
+    const periodSales = filterSalesByPeriod(sales, startDate, endDate);
+
+    const exportData = {
+        period: label,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        exportDate: new Date().toISOString(),
+        summary: {
+            totalRevenue: periodSales.reduce((sum, s) => sum + s.price, 0),
+            totalCount: periodSales.length
+        },
+        sales: periodSales
+    };
+
+    const filename = `bilanz_${bilanzPeriodType}_${startDate.toISOString().split('T')[0]}.json`;
+    downloadJSON(exportData, filename);
+    showToast(`${label} exportiert`);
+}
+
+async function exportFullDatabaseCSV() {
+    showToast('Lade Daten...');
+
+    try {
+        // Lade alle Daten
+        const [salesData, personsData, productsData, categoriesData, inventoryData, debtorsData, loyaltyTypesData] = await Promise.all([
+            loadSalesData(),
+            apiGet('persons'),
+            apiGet('products'),
+            apiGet('categories'),
+            loadInventoryData(),
+            apiGet('debtors'),
+            apiGet('loyalty_card_types')
+        ]);
+
+        // CSV für Verkäufe
+        let csv = 'VERKÄUFE\n';
+        csv += 'ID;Produkt;Preis;Zeitpunkt;Zahlungsart;Person-ID;Treuestamp\n';
+        salesData.forEach(sale => {
+            csv += `${sale.id};"${sale.name}";${sale.price};"${sale.timestamp}";${sale.paymentMethod || 'cash'};${sale.personId || ''};${sale.loyaltyStamps || ''}\n`;
+        });
+
+        // CSV für Produkte
+        csv += '\nPRODUKTE\n';
+        csv += 'ID;Name;Preis;Kategorie;Sortierung\n';
+        productsData.forEach(prod => {
+            csv += `${prod.id};"${prod.name}";${prod.price};${prod.category || ''};${prod.sortOrder || ''}\n`;
+        });
+
+        // CSV für Kategorien
+        csv += '\nKATEGORIEN\n';
+        csv += 'ID;Bezeichnung\n';
+        categoriesData.forEach(cat => {
+            csv += `${cat.id};"${cat.label}"\n`;
+        });
+
+        // CSV für Personen (Gutschriften)
+        csv += '\nPERSONEN (GUTSCHRIFTEN)\n';
+        csv += 'ID;Name;Guthaben;Treuekarten\n';
+        personsData.forEach(person => {
+            const cardCount = person.loyaltyCards ? person.loyaltyCards.length : 0;
+            csv += `${person.id};"${person.name}";${person.balance};${cardCount}\n`;
+        });
+
+        // CSV für Schuldner
+        csv += '\nSCHULDNER\n';
+        csv += 'ID;Name;Schulden\n';
+        if (Array.isArray(debtorsData)) {
+            debtorsData.forEach(debtor => {
+                csv += `${debtor.id};"${debtor.name}";${debtor.totalDebt || debtor.debt || 0}\n`;
+            });
+        }
+
+        // CSV für Inventar
+        csv += '\nINVENTAR\n';
+        csv += 'ID;Produkt-ID;Produkt;Menge;Datum\n';
+        inventoryData.forEach(inv => {
+            const prod = productsData.find(p => p.id === inv.productId);
+            csv += `${inv.id};${inv.productId};"${prod ? prod.name : 'Unbekannt'}";${inv.quantity};"${inv.date}"\n`;
+        });
+
+        // CSV für Treuekarten-Typen
+        csv += '\nTREUEKARTEN-TYPEN\n';
+        csv += 'ID;Name;Typ;Erforderliche Stempel;Bonus\n';
+        loyaltyTypesData.forEach(lt => {
+            csv += `${lt.id};"${lt.name}";${lt.type};${lt.requiredStamps};${lt.bonusAmount}\n`;
+        });
+
+        // Download
+        const filename = `fos_bar_datenbank_${new Date().toISOString().split('T')[0]}.csv`;
+        downloadCSV(csv, filename);
+        showToast('Datenbank exportiert');
+    } catch (error) {
+        console.error('Export-Fehler:', error);
+        showToast('Fehler beim Exportieren', 'error');
+    }
+}
+
+function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function downloadCSV(csv, filename) {
+    // BOM für Excel-Kompatibilität
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 async function renderManagerStatistik() {

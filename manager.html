@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FOS Bar - Manager</title>
-    <link rel="stylesheet" href="styles.css?v=1768216614788">
-    <link rel="stylesheet" href="manager.css?v=1768216614788">
+    <link rel="stylesheet" href="styles.css?v=1768462700">
+    <link rel="stylesheet" href="manager.css?v=1768462700">
 </head>
 <body>
     <div class="container">
@@ -272,16 +272,38 @@
         <!-- BILANZ TAB -->
         <div id="bilanz-tab" class="tab-content">
             <div class="bilanz-container">
-                <h2>Tagesbilanz</h2>
+                <h2>Bilanz</h2>
+
+                <!-- Zeitraum-Auswahl -->
+                <div class="period-selection">
+                    <div class="period-type-buttons">
+                        <button class="period-btn active" data-period="day">Tag</button>
+                        <button class="period-btn" data-period="week">Woche</button>
+                        <button class="period-btn" data-period="month">Monat</button>
+                    </div>
+                    <div class="period-navigation">
+                        <button class="nav-btn" id="period-prev">&lt;</button>
+                        <span class="period-label" id="period-label">Heute</span>
+                        <button class="nav-btn" id="period-next">&gt;</button>
+                    </div>
+                </div>
 
                 <div class="bilanz-summary">
                     <div class="summary-card">
-                        <h3>Gesamtumsatz</h3>
-                        <p class="big-number" id="bilanz-total">0.00€</p>
+                        <h3>Umsatz</h3>
+                        <p class="big-number" id="bilanz-total">0,00 €</p>
                     </div>
                     <div class="summary-card">
                         <h3>Verkaufte Artikel</h3>
                         <p class="big-number" id="bilanz-count">0</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Zahlungsarten</h3>
+                        <div class="payment-breakdown" id="payment-breakdown">
+                            <span class="payment-item">Bar: 0,00 €</span>
+                            <span class="payment-item">Guthaben: 0,00 €</span>
+                            <span class="payment-item">Schuld: 0,00 €</span>
+                        </div>
                     </div>
                 </div>
 
@@ -291,10 +313,15 @@
                 </div>
 
                 <div class="export-section">
-                    <button class="btn-export" id="btn-export">Daten exportieren (JSON)</button>
-                    <button class="btn-import" id="btn-import">Daten importieren</button>
-                    <input type="file" id="file-import" accept=".json" style="display: none;">
-                    <button class="btn-clear" id="btn-clear-day">Heutigen Tag löschen</button>
+                    <h3>Daten exportieren</h3>
+                    <div class="export-buttons">
+                        <button class="btn-export" id="btn-export-period">
+                            Zeitraum exportieren (JSON)
+                        </button>
+                        <button class="btn-export" id="btn-export-csv">
+                            Gesamte Datenbank (CSV)
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -420,7 +447,7 @@
     <div id="backup-status" style="display: none;"></div>
 
     <script src="api-client.js"></script>
-    <script src="manager.js?v=1768234555"></script>
+    <script src="manager.js?v=1768462700"></script>
     <script>
         // Inline tab functionality - guaranteed to work
         console.log('Inline tab script loaded');
