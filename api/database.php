@@ -140,6 +140,65 @@ class Database {
             )
         ");
 
+        // Benutzer-Tabelle
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                display_name TEXT,
+                role TEXT DEFAULT 'staff',
+                is_active INTEGER DEFAULT 1,
+                created_at TEXT,
+                last_login TEXT
+            )
+        ");
+
+        // Aktivitäts-Log
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS activity_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                username TEXT,
+                action TEXT NOT NULL,
+                details TEXT,
+                ip_address TEXT,
+                timestamp TEXT NOT NULL
+            )
+        ");
+
+        // App-Einstellungen
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        ");
+
+        // Vorbestellungen
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS preorders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_name TEXT NOT NULL,
+                customer_class TEXT,
+                items TEXT NOT NULL,
+                total_price REAL NOT NULL,
+                status TEXT DEFAULT 'pending',
+                pickup_time TEXT,
+                created_at TEXT NOT NULL,
+                completed_at TEXT
+            )
+        ");
+
+        // Produkte für Vorbestellung freigeben
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS preorder_products (
+                product_id TEXT PRIMARY KEY,
+                is_available INTEGER DEFAULT 1,
+                max_quantity INTEGER DEFAULT 10
+            )
+        ");
+
         // Default-Kategorien einfügen wenn leer
         $stmt = $this->pdo->query("SELECT COUNT(*) as count FROM categories");
         $count = $stmt->fetch()['count'];
@@ -153,6 +212,18 @@ class Database {
             foreach ($defaults as $cat) {
                 $stmt->execute([$cat['id'], $cat['label']]);
             }
+        }
+
+        // Default Admin-Benutzer erstellen wenn keine Benutzer existieren
+        $stmt = $this->pdo->query("SELECT COUNT(*) as count FROM users");
+        $count = $stmt->fetch()['count'];
+        if ($count == 0) {
+            $this->createUser([
+                'username' => 'admin',
+                'password' => 'admin',
+                'display_name' => 'Administrator',
+                'role' => 'admin'
+            ]);
         }
     }
 
@@ -610,5 +681,243 @@ class Database {
         $stmt = $this->pdo->prepare("DELETE FROM debtors WHERE id = ?");
         $stmt->execute([$id]);
         return $stmt->rowCount() > 0;
+    }
+
+    // ============ USERS ============
+
+    public function getUsers() {
+        $stmt = $this->pdo->query("SELECT id, username, display_name, role, is_active, created_at, last_login FROM users ORDER BY username");
+        return $stmt->fetchAll();
+    }
+
+    public function getUserById($id) {
+        $stmt = $this->pdo->prepare("SELECT id, username, display_name, role, is_active, created_at, last_login FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+
+    public function getUserByUsername($username) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        return $stmt->fetch();
+    }
+
+    public function createUser($userData) {
+        $id = uniqid('user_', true);
+        $stmt = $this->pdo->prepare("
+            INSERT INTO users (id, username, password_hash, display_name, role, is_active, created_at)
+            VALUES (?, ?, ?, ?, ?, 1, ?)
+        ");
+        $stmt->execute([
+            $id,
+            $userData['username'],
+            password_hash($userData['password'], PASSWORD_DEFAULT),
+            $userData['display_name'] ?? $userData['username'],
+            $userData['role'] ?? 'staff',
+            date('c')
+        ]);
+        return $this->getUserById($id);
+    }
+
+    public function updateUser($id, $userData) {
+        $updates = [];
+        $params = [];
+
+        if (isset($userData['display_name'])) {
+            $updates[] = 'display_name = ?';
+            $params[] = $userData['display_name'];
+        }
+        if (isset($userData['role'])) {
+            $updates[] = 'role = ?';
+            $params[] = $userData['role'];
+        }
+        if (isset($userData['is_active'])) {
+            $updates[] = 'is_active = ?';
+            $params[] = $userData['is_active'] ? 1 : 0;
+        }
+        if (isset($userData['password']) && !empty($userData['password'])) {
+            $updates[] = 'password_hash = ?';
+            $params[] = password_hash($userData['password'], PASSWORD_DEFAULT);
+        }
+
+        if (empty($updates)) return false;
+
+        $params[] = $id;
+        $sql = "UPDATE users SET " . implode(', ', $updates) . " WHERE id = ?";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $this->getUserById($id);
+    }
+
+    public function deleteUser($id) {
+        $stmt = $this->pdo->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function verifyUserPassword($username, $password) {
+        $user = $this->getUserByUsername($username);
+        if (!$user) return false;
+        if (!$user['is_active']) return false;
+        if (!password_verify($password, $user['password_hash'])) return false;
+
+        // Update last login
+        $stmt = $this->pdo->prepare("UPDATE users SET last_login = ? WHERE id = ?");
+        $stmt->execute([date('c'), $user['id']]);
+
+        return [
+            'id' => $user['id'],
+            'username' => $user['username'],
+            'display_name' => $user['display_name'],
+            'role' => $user['role']
+        ];
+    }
+
+    // ============ ACTIVITY LOG ============
+
+    public function logActivity($userId, $username, $action, $details = null) {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO activity_log (user_id, username, action, details, ip_address, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $userId,
+            $username,
+            $action,
+            $details ? json_encode($details, JSON_UNESCAPED_UNICODE) : null,
+            $_SERVER['REMOTE_ADDR'] ?? null,
+            date('c')
+        ]);
+    }
+
+    public function getActivityLog($limit = 100, $offset = 0, $userId = null) {
+        $sql = "SELECT * FROM activity_log";
+        $params = [];
+
+        if ($userId) {
+            $sql .= " WHERE user_id = ?";
+            $params[] = $userId;
+        }
+
+        $sql .= " ORDER BY timestamp DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $logs = $stmt->fetchAll();
+
+        return array_map(function($log) {
+            return [
+                'id' => $log['id'],
+                'userId' => $log['user_id'],
+                'username' => $log['username'],
+                'action' => $log['action'],
+                'details' => $log['details'] ? json_decode($log['details'], true) : null,
+                'ipAddress' => $log['ip_address'],
+                'timestamp' => $log['timestamp']
+            ];
+        }, $logs);
+    }
+
+    // ============ SETTINGS ============
+
+    public function getSetting($key, $default = null) {
+        $stmt = $this->pdo->prepare("SELECT value FROM settings WHERE key = ?");
+        $stmt->execute([$key]);
+        $row = $stmt->fetch();
+        return $row ? json_decode($row['value'], true) : $default;
+    }
+
+    public function setSetting($key, $value) {
+        $stmt = $this->pdo->prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
+        $stmt->execute([$key, json_encode($value, JSON_UNESCAPED_UNICODE)]);
+    }
+
+    public function getAllSettings() {
+        $stmt = $this->pdo->query("SELECT * FROM settings");
+        $rows = $stmt->fetchAll();
+        $settings = [];
+        foreach ($rows as $row) {
+            $settings[$row['key']] = json_decode($row['value'], true);
+        }
+        return $settings;
+    }
+
+    // ============ PREORDERS ============
+
+    public function getPreorders($status = null) {
+        $sql = "SELECT * FROM preorders";
+        $params = [];
+
+        if ($status) {
+            $sql .= " WHERE status = ?";
+            $params[] = $status;
+        }
+
+        $sql .= " ORDER BY created_at DESC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $orders = $stmt->fetchAll();
+
+        return array_map(function($order) {
+            return [
+                'id' => $order['id'],
+                'customerName' => $order['customer_name'],
+                'customerClass' => $order['customer_class'],
+                'items' => json_decode($order['items'], true),
+                'totalPrice' => $order['total_price'],
+                'status' => $order['status'],
+                'pickupTime' => $order['pickup_time'],
+                'createdAt' => $order['created_at'],
+                'completedAt' => $order['completed_at']
+            ];
+        }, $orders);
+    }
+
+    public function createPreorder($order) {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO preorders (customer_name, customer_class, items, total_price, status, pickup_time, created_at)
+            VALUES (?, ?, ?, ?, 'pending', ?, ?)
+        ");
+        $stmt->execute([
+            $order['customerName'],
+            $order['customerClass'] ?? null,
+            json_encode($order['items'], JSON_UNESCAPED_UNICODE),
+            $order['totalPrice'],
+            $order['pickupTime'] ?? null,
+            date('c')
+        ]);
+        $order['id'] = $this->pdo->lastInsertId();
+        return $order;
+    }
+
+    public function updatePreorderStatus($id, $status) {
+        $completedAt = ($status === 'completed' || $status === 'cancelled') ? date('c') : null;
+        $stmt = $this->pdo->prepare("UPDATE preorders SET status = ?, completed_at = ? WHERE id = ?");
+        $stmt->execute([$status, $completedAt, $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function getPreorderProducts() {
+        $stmt = $this->pdo->query("SELECT * FROM preorder_products");
+        $rows = $stmt->fetchAll();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[$row['product_id']] = [
+                'isAvailable' => (bool)$row['is_available'],
+                'maxQuantity' => $row['max_quantity']
+            ];
+        }
+        return $result;
+    }
+
+    public function setPreorderProduct($productId, $isAvailable, $maxQuantity = 10) {
+        $stmt = $this->pdo->prepare("
+            INSERT OR REPLACE INTO preorder_products (product_id, is_available, max_quantity)
+            VALUES (?, ?, ?)
+        ");
+        $stmt->execute([$productId, $isAvailable ? 1 : 0, $maxQuantity]);
     }
 }

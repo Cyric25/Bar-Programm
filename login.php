@@ -108,6 +108,15 @@
             display: block;
         }
 
+        .user-info {
+            text-align: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border, #333);
+            color: var(--text-muted, #888);
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 480px) {
             .login-container {
                 padding: 1.5rem;
@@ -123,48 +132,80 @@
     <div class="login-container">
         <div class="login-header">
             <h1>FOS Bar</h1>
-            <p>Bitte Passwort eingeben</p>
+            <p>Bitte anmelden</p>
         </div>
 
         <form class="login-form" id="login-form">
             <div class="error-message" id="error-message">
-                Falsches Passwort
+                Falscher Benutzername oder Passwort
+            </div>
+
+            <div class="form-group">
+                <label for="username">Benutzername</label>
+                <input type="text" id="username" name="username" required autofocus autocomplete="username">
             </div>
 
             <div class="form-group">
                 <label for="password">Passwort</label>
-                <input type="password" id="password" name="password" required autofocus>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
             </div>
 
             <button type="submit" class="login-btn">Anmelden</button>
         </form>
+
+        <div class="user-info" id="user-info" style="display: none;">
+            Angemeldet als: <span id="current-user"></span>
+        </div>
     </div>
 
     <script>
         const form = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-message');
+        const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
+        const userInfo = document.getElementById('user-info');
+        const currentUserSpan = document.getElementById('current-user');
 
         // Redirect-URL aus Query-Parameter oder Standard
         const urlParams = new URLSearchParams(window.location.search);
         const redirectTo = urlParams.get('redirect') || 'index.html';
 
+        // Prüfen ob bereits eingeloggt
+        async function checkAuth() {
+            try {
+                const response = await fetch('api/?action=me');
+                const data = await response.json();
+                if (data.authenticated && data.user) {
+                    // Bereits eingeloggt - direkt weiterleiten
+                    window.location.href = redirectTo;
+                }
+            } catch (e) {
+                console.log('Auth-Check fehlgeschlagen');
+            }
+        }
+        checkAuth();
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             errorMsg.classList.remove('show');
 
+            const username = usernameInput.value;
             const password = passwordInput.value;
 
             try {
                 const response = await fetch('api/?action=login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password })
+                    body: JSON.stringify({ username, password })
                 });
 
-                if (response.ok) {
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Erfolgreicher Login
                     window.location.href = redirectTo;
                 } else {
+                    errorMsg.textContent = data.error || 'Anmeldung fehlgeschlagen';
                     errorMsg.classList.add('show');
                     passwordInput.value = '';
                     passwordInput.focus();

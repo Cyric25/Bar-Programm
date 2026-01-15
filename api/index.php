@@ -12,6 +12,12 @@
  * GET/POST/DELETE ?action=debtors
  * POST ?action=login
  * GET ?action=logout
+ * GET/POST/DELETE ?action=users (Admin only)
+ * GET ?action=activity_log (Admin only)
+ * GET/POST ?action=settings
+ * GET/POST ?action=preorders
+ * GET/POST ?action=preorder_products
+ * GET ?action=me (aktueller Benutzer)
  */
 
 require_once __DIR__ . '/database.php';
@@ -27,18 +33,97 @@ try {
     if ($action === 'login') {
         if ($method === 'POST') {
             $data = getRequestBody();
-            if (login($data['password'] ?? '')) {
-                jsonResponse(['success' => true]);
+
+            // Neuer Login mit Benutzername/Passwort
+            if (isset($data['username']) && isset($data['password'])) {
+                $user = loginUser($data['username'], $data['password'], $db);
+                if ($user) {
+                    jsonResponse(['success' => true, 'user' => $user]);
+                } else {
+                    errorResponse('Falscher Benutzername oder Passwort', 401);
+                }
+            }
+            // Fallback: Nur Passwort (Kompatibilität)
+            elseif (isset($data['password'])) {
+                if (login($data['password'])) {
+                    jsonResponse(['success' => true]);
+                } else {
+                    errorResponse('Falsches Passwort', 401);
+                }
             } else {
-                errorResponse('Falsches Passwort', 401);
+                errorResponse('Benutzername und Passwort erforderlich', 400);
             }
         }
         exit();
     }
 
     if ($action === 'logout') {
-        logout();
+        logout($db);
         jsonResponse(['success' => true]);
+        exit();
+    }
+
+    // Aktueller Benutzer (ohne Auth - gibt null zurück wenn nicht eingeloggt)
+    if ($action === 'me') {
+        $user = getCurrentUser();
+        jsonResponse(['user' => $user, 'authenticated' => $user !== null]);
+        exit();
+    }
+
+    // Öffentliche Preorder-Endpoints (für Kunden)
+    if ($action === 'public_preorder') {
+        if ($method === 'GET') {
+            // Verfügbare Produkte für Vorbestellung
+            $settings = $db->getSetting('preorder_settings', [
+                'enabled' => false,
+                'start_time' => '08:00',
+                'end_time' => '10:00'
+            ]);
+
+            if (!$settings['enabled']) {
+                jsonResponse(['enabled' => false, 'message' => 'Vorbestellungen sind derzeit nicht möglich']);
+                exit();
+            }
+
+            // Prüfe Zeitfenster
+            $now = date('H:i');
+            $inTimeWindow = $now >= $settings['start_time'] && $now <= $settings['end_time'];
+
+            $products = [];
+            if ($inTimeWindow) {
+                $allProducts = $db->getProducts();
+                $preorderProducts = $db->getPreorderProducts();
+
+                foreach ($allProducts as $product) {
+                    if (isset($preorderProducts[$product['id']]) && $preorderProducts[$product['id']]['isAvailable']) {
+                        $product['maxQuantity'] = $preorderProducts[$product['id']]['maxQuantity'];
+                        $products[] = $product;
+                    }
+                }
+            }
+
+            jsonResponse([
+                'enabled' => true,
+                'inTimeWindow' => $inTimeWindow,
+                'startTime' => $settings['start_time'],
+                'endTime' => $settings['end_time'],
+                'products' => $products
+            ]);
+        } elseif ($method === 'POST') {
+            // Vorbestellung aufgeben
+            $data = getRequestBody();
+            if (empty($data['customerName']) || empty($data['items'])) {
+                errorResponse('Name und Bestellungen erforderlich', 400);
+            }
+
+            $settings = $db->getSetting('preorder_settings', ['enabled' => false]);
+            if (!$settings['enabled']) {
+                errorResponse('Vorbestellungen sind derzeit nicht möglich', 403);
+            }
+
+            $order = $db->createPreorder($data);
+            jsonResponse(['success' => true, 'order' => $order]);
+        }
         exit();
     }
 
@@ -177,12 +262,121 @@ try {
             }
             break;
 
+        // ============ USERS (Admin only) ============
+        case 'users':
+            requireAdmin();
+            if ($method === 'GET') {
+                if ($id) {
+                    $user = $db->getUserById($id);
+                    if (!$user) errorResponse('Benutzer nicht gefunden', 404);
+                    jsonResponse($user);
+                } else {
+                    jsonResponse($db->getUsers());
+                }
+            } elseif ($method === 'POST') {
+                $data = getRequestBody();
+                if ($id) {
+                    // Update
+                    $user = $db->updateUser($id, $data);
+                    $db->logActivity($_SESSION['user_id'], $_SESSION['username'], 'user_updated', ['target_user' => $id]);
+                    jsonResponse($user);
+                } else {
+                    // Create
+                    if (empty($data['username']) || empty($data['password'])) {
+                        errorResponse('Benutzername und Passwort erforderlich', 400);
+                    }
+                    $user = $db->createUser($data);
+                    $db->logActivity($_SESSION['user_id'], $_SESSION['username'], 'user_created', ['target_user' => $user['id']]);
+                    jsonResponse($user);
+                }
+            } elseif ($method === 'DELETE') {
+                if (!$id) errorResponse('ID erforderlich', 400);
+                // Verhindere Selbstlöschung
+                if ($id === $_SESSION['user_id']) {
+                    errorResponse('Sie können sich nicht selbst löschen', 400);
+                }
+                $db->deleteUser($id);
+                $db->logActivity($_SESSION['user_id'], $_SESSION['username'], 'user_deleted', ['target_user' => $id]);
+                jsonResponse(['success' => true]);
+            }
+            break;
+
+        // ============ ACTIVITY LOG (Admin only) ============
+        case 'activity_log':
+            requireAdmin();
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
+            $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+            $userId = $_GET['user_id'] ?? null;
+            jsonResponse($db->getActivityLog($limit, $offset, $userId));
+            break;
+
+        // ============ SETTINGS ============
+        case 'settings':
+            if ($method === 'GET') {
+                $key = $_GET['key'] ?? null;
+                if ($key) {
+                    jsonResponse(['key' => $key, 'value' => $db->getSetting($key)]);
+                } else {
+                    jsonResponse($db->getAllSettings());
+                }
+            } elseif ($method === 'POST') {
+                requireAdmin();
+                $data = getRequestBody();
+                if (!isset($data['key']) || !isset($data['value'])) {
+                    errorResponse('key und value erforderlich', 400);
+                }
+                $db->setSetting($data['key'], $data['value']);
+                $db->logActivity($_SESSION['user_id'], $_SESSION['username'], 'setting_changed', ['key' => $data['key']]);
+                jsonResponse(['success' => true]);
+            }
+            break;
+
+        // ============ PREORDERS ============
+        case 'preorders':
+            if ($method === 'GET') {
+                $status = $_GET['status'] ?? null;
+                jsonResponse($db->getPreorders($status));
+            } elseif ($method === 'POST') {
+                $data = getRequestBody();
+                if ($id) {
+                    // Update Status
+                    if (!isset($data['status'])) errorResponse('status erforderlich', 400);
+                    $db->updatePreorderStatus($id, $data['status']);
+                    $db->logActivity($_SESSION['user_id'], $_SESSION['username'], 'preorder_status_changed', ['order_id' => $id, 'status' => $data['status']]);
+                    jsonResponse(['success' => true]);
+                } else {
+                    // Create (für Staff)
+                    $order = $db->createPreorder($data);
+                    jsonResponse($order);
+                }
+            }
+            break;
+
+        // ============ PREORDER PRODUCTS ============
+        case 'preorder_products':
+            if ($method === 'GET') {
+                jsonResponse($db->getPreorderProducts());
+            } elseif ($method === 'POST') {
+                requireAdmin();
+                $data = getRequestBody();
+                if (!isset($data['productId'])) errorResponse('productId erforderlich', 400);
+                $db->setPreorderProduct(
+                    $data['productId'],
+                    $data['isAvailable'] ?? true,
+                    $data['maxQuantity'] ?? 10
+                );
+                jsonResponse(['success' => true]);
+            }
+            break;
+
         // ============ STATUS ============
         case 'status':
+            $user = getCurrentUser();
             jsonResponse([
                 'status' => 'ok',
-                'version' => '1.0.0',
-                'database' => file_exists(DB_PATH) ? 'connected' : 'not found'
+                'version' => '2.0.0',
+                'database' => file_exists(DB_PATH) ? 'connected' : 'not found',
+                'user' => $user
             ]);
             break;
 
