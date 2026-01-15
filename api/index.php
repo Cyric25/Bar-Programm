@@ -84,12 +84,13 @@ try {
                 jsonResponse($db->getSales());
             } elseif ($method === 'POST') {
                 $data = getRequestBody();
-                if (isset($data[0])) {
-                    // Array von Sales (Import)
+                // Prüfe ob es ein Array ist (auch leeres Array)
+                if (is_array($data) && (empty($data) || isset($data[0]))) {
+                    // Array von Sales (Import oder clearTodaySales)
                     $db->saveSales($data);
                     jsonResponse(['success' => true]);
                 } else {
-                    // Einzelner Sale
+                    // Einzelner Sale (hat 'name' oder 'productName' key)
                     jsonResponse($db->addSale($data));
                 }
             }
@@ -101,12 +102,13 @@ try {
                 jsonResponse($db->getPersons());
             } elseif ($method === 'POST') {
                 $data = getRequestBody();
-                if (isset($data[0])) {
+                // Prüfe ob es ein Array ist (auch leeres Array)
+                if (is_array($data) && (empty($data) || isset($data[0]))) {
                     // Array von Personen
                     $db->savePersons($data);
                     jsonResponse(['success' => true]);
                 } else {
-                    // Einzelne Person
+                    // Einzelne Person (hat 'name' key)
                     jsonResponse($db->savePerson($data));
                 }
             } elseif ($method === 'DELETE') {

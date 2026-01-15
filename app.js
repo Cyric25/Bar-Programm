@@ -102,7 +102,12 @@ async function addSaleToServer(sale) {
 
 async function loadPersons() {
     try {
-        persons = await apiGet('persons');
+        const rawPersons = await apiGet('persons');
+        // Stelle sicher, dass jede Person ein transactions-Array hat
+        persons = rawPersons.map(p => ({
+            ...p,
+            transactions: p.transactions || []
+        }));
         console.log('Personen aus API geladen:', persons.length);
     } catch (error) {
         console.error('Fehler beim Laden der Personen:', error);
@@ -444,10 +449,14 @@ function deleteSale(saleId) {
     );
 }
 
-function clearTodaySales() {
+async function clearTodaySales() {
     const today = getTodayStart();
+    const beforeCount = sales.length;
     sales = sales.filter(s => new Date(s.timestamp) < today);
-    saveSales();
+    const afterCount = sales.length;
+    console.log(`clearTodaySales: ${beforeCount} -> ${afterCount} Verkäufe (${beforeCount - afterCount} gelöscht)`);
+
+    await saveSales();
     renderAll();
     showToast('Heutige Verkäufe gelöscht');
 }
