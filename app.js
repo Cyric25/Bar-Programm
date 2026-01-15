@@ -1677,38 +1677,54 @@ function processLoyaltyForPurchase(person, product, sale) {
         // Prüfen ob Produkt zur Karte passt
         if (!isProductEligibleForCard(product, cardType)) return;
 
-        const requiredStamps = cardType.type === 'buy_n_get_1'
+        const requiredStampsForCard = cardType.type === 'buy_n_get_1'
             ? cardType.requiredPurchases
             : cardType.payCount;
 
+        // Berechne benötigte Stempel für dieses Produkt (Mehrfach-Stempel für teurere Produkte)
+        const stampsForProduct = getRequiredStampsForProduct(product, cardType);
+
+        // Wenn Preis kein Vielfaches ist, überspringen
+        if (stampsForProduct < 0) return;
+
         // ERST prüfen ob Karte bereits voll ist (Bonus einlösen)
-        if (card.currentStamps >= requiredStamps) {
-            // Karte ist voll - BONUS einlösen und Karte zur Löschung markieren!
+        if (card.currentStamps >= requiredStampsForCard) {
+            // Prüfen ob genug Stempel für dieses Produkt vorhanden sind
+            if (card.currentStamps < stampsForProduct) {
+                // Nicht genug Stempel für dieses teurere Produkt
+                return;
+            }
+
+            // Karte ist voll - BONUS einlösen!
+            // Bei teureren Produkten werden entsprechend mehr Stempel abgezogen
             card.history.push({
                 timestamp: new Date().toISOString(),
                 action: 'redeem',
                 productId: product.id,
-                productName: product.name
+                productName: product.name,
+                stampsUsed: stampsForProduct
             });
 
             freeProduct = {
                 cardType: cardType,
-                product: product
+                product: product,
+                stampsUsed: stampsForProduct
             };
 
-            // Karte zur Löschung markieren
+            // Karte zur Löschung markieren (alle Stempel wurden eingelöst)
             cardsToRemove.push(card.id);
 
             // KEIN neuer Stempel nach Bonus-Einlösung!
         } else {
-            // Karte noch nicht voll - normaler Stempel
-            card.currentStamps++;
+            // Karte noch nicht voll - Stempel hinzufügen (basierend auf Produktpreis)
+            card.currentStamps += stampsForProduct;
             card.history.push({
                 timestamp: new Date().toISOString(),
                 action: 'stamp',
                 productId: product.id,
                 productName: product.name,
-                saleId: sale.id
+                saleId: sale.id,
+                stampsAdded: stampsForProduct
             });
         }
     });
@@ -1731,6 +1747,43 @@ function isProductEligibleForCard(product, cardType) {
         return product.category === cardType.categoryId;
     }
     return false;
+}
+
+// Ermittelt den Basis-Preis (niedrigster Preis) für eine Treuekarte
+function getBasePrice(cardType) {
+    let eligibleProducts = [];
+
+    if (cardType.bindingType === 'product') {
+        const product = products.find(p => p.id === cardType.productId);
+        if (product) eligibleProducts.push(product);
+    } else if (cardType.bindingType === 'products') {
+        eligibleProducts = products.filter(p => cardType.productIds?.includes(p.id));
+    } else if (cardType.bindingType === 'category') {
+        eligibleProducts = products.filter(p => p.category === cardType.categoryId);
+    }
+
+    if (eligibleProducts.length === 0) return 0;
+
+    // Niedrigster Preis als Basis
+    return Math.min(...eligibleProducts.map(p => p.price));
+}
+
+// Berechnet, wie viele Stempel für ein Produkt benötigt werden
+function getRequiredStampsForProduct(product, cardType) {
+    const basePrice = getBasePrice(cardType);
+    if (basePrice <= 0) return 1;
+
+    // Berechne Verhältnis und runde auf
+    const ratio = product.price / basePrice;
+
+    // Nur ganze Vielfache erlauben (mit kleiner Toleranz für Rundungsfehler)
+    const stamps = Math.round(ratio);
+    if (Math.abs(ratio - stamps) > 0.01) {
+        // Kein glattes Vielfaches - nicht erlaubt für Einlösung
+        return -1;
+    }
+
+    return Math.max(1, stamps);
 }
 
 function renderPersonLoyaltyCards(personId, highlightCardId = null) {

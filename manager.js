@@ -177,6 +177,12 @@ function initEventListeners() {
     populateProductSelector();
     toggleLoyaltyTypeFields();
     toggleBindingFields();
+
+    // Inventar-Formular
+    const inventoryForm = document.getElementById('inventory-form');
+    if (inventoryForm) {
+        inventoryForm.addEventListener('submit', handleInventoryFormSubmit);
+    }
 }
 
 // ===========================
@@ -1199,6 +1205,40 @@ async function loadInventoryData() {
     } catch (error) {
         console.error('Fehler beim Laden des Inventars:', error);
         return [];
+    }
+}
+
+async function handleInventoryFormSubmit(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const productId = formData.get('productId');
+    const quantity = parseInt(formData.get('quantity'));
+
+    if (!productId || !quantity || quantity < 1) {
+        showToast('Bitte alle Pflichtfelder ausfüllen', 'error');
+        return;
+    }
+
+    try {
+        const entry = {
+            productId: productId,
+            date: new Date().toISOString().split('T')[0],
+            quantity: quantity
+        };
+
+        await apiPost('inventory', entry);
+
+        const product = products.find(p => p.id === productId);
+        showToast(`${quantity}x ${product?.name || productId} erfasst`);
+
+        e.target.reset();
+
+        // Inventar-Tab neu laden
+        await renderManagerInventar();
+    } catch (error) {
+        console.error('Fehler beim Speichern des Inventars:', error);
+        showToast('Fehler beim Speichern', 'error');
     }
 }
 
