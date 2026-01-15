@@ -1136,6 +1136,9 @@ async function renderManagerStatistik() {
 async function renderManagerInventar() {
     console.log('Loading Inventar data...');
 
+    // Produkt-Dropdown befüllen
+    renderInventoryProductSelect();
+
     // Load inventory and sales data from API
     const inventory = await loadInventoryData();
     const sales = await loadSalesData();
@@ -1143,6 +1146,41 @@ async function renderManagerInventar() {
 
     // Render inventory table
     renderInventoryTable(inventory, todaySales);
+}
+
+function renderInventoryProductSelect() {
+    const select = document.getElementById('inventory-product');
+    if (!select) return;
+
+    // Produkte nach Kategorie gruppieren
+    const productsByCategory = {};
+    products.forEach(product => {
+        const cat = product.category || 'other';
+        if (!productsByCategory[cat]) {
+            productsByCategory[cat] = [];
+        }
+        productsByCategory[cat].push(product);
+    });
+
+    // Dropdown befüllen
+    select.innerHTML = '<option value="">-- Produkt wählen --</option>';
+
+    Object.keys(productsByCategory).sort().forEach(category => {
+        const catLabel = getCategoryLabel(category);
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = catLabel;
+
+        productsByCategory[category]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = product.name;
+                optgroup.appendChild(option);
+            });
+
+        select.appendChild(optgroup);
+    });
 }
 
 // Helper functions (API-based)
