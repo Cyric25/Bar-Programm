@@ -5,9 +5,11 @@
 let products = [];
 let loyaltyCardTypes = [];
 let categories = [];
+let users = [];
 let editingProductId = null;
 let editingCardTypeId = null;
 let editingCategoryId = null;
+let editingUserId = null;
 let currentCategoryFilter = 'all';
 
 // Bilanz Zeitraum-State
@@ -204,6 +206,64 @@ function initEventListeners() {
     if (inventoryForm) {
         inventoryForm.addEventListener('submit', handleInventoryFormSubmit);
     }
+
+    // Benutzer-Formular
+    const userForm = document.getElementById('user-form');
+    if (userForm) {
+        userForm.addEventListener('submit', handleUserFormSubmit);
+    }
+
+    const userCancelBtn = document.getElementById('btn-user-cancel');
+    if (userCancelBtn) {
+        userCancelBtn.addEventListener('click', resetUserForm);
+    }
+
+    // Aktivitäts-Log Filter
+    const activityFilter = document.getElementById('activity-user-filter');
+    if (activityFilter) {
+        activityFilter.addEventListener('change', renderActivityLog);
+    }
+
+    const refreshActivityBtn = document.getElementById('btn-refresh-activity');
+    if (refreshActivityBtn) {
+        refreshActivityBtn.addEventListener('click', renderActivityLog);
+    }
+
+    // Vorbestellungs-Formular
+    const preorderSettingsForm = document.getElementById('preorder-settings-form');
+    if (preorderSettingsForm) {
+        preorderSettingsForm.addEventListener('submit', handlePreorderSettingsSubmit);
+    }
+
+    const preorderStatusFilter = document.getElementById('preorder-status-filter');
+    if (preorderStatusFilter) {
+        preorderStatusFilter.addEventListener('change', async () => {
+            const status = preorderStatusFilter.value || null;
+            await loadPreorders(status);
+            renderPreordersList();
+        });
+    }
+
+    const refreshPreordersBtn = document.getElementById('btn-refresh-preorders');
+    if (refreshPreordersBtn) {
+        refreshPreordersBtn.addEventListener('click', async () => {
+            const status = document.getElementById('preorder-status-filter')?.value || null;
+            await loadPreorders(status);
+            renderPreordersList();
+        });
+    }
+}
+
+async function handlePreorderSettingsSubmit(e) {
+    e.preventDefault();
+
+    preorderSettings = {
+        enabled: document.getElementById('preorder-enabled').checked,
+        start_time: document.getElementById('preorder-start-time').value,
+        end_time: document.getElementById('preorder-end-time').value
+    };
+
+    await savePreorderSettings();
 }
 
 // ===========================
@@ -1113,6 +1173,10 @@ function switchTab(tabName) {
         renderManagerStatistik();
     } else if (tabName === 'inventar') {
         renderManagerInventar();
+    } else if (tabName === 'benutzer') {
+        renderManagerBenutzer();
+    } else if (tabName === 'vorbestellung') {
+        renderManagerVorbestellung();
     }
 }
 
@@ -1661,6 +1725,553 @@ function renderInventoryTable(inventory, todaySales) {
 }
 
 // ===========================
+// USER MANAGEMENT
+// ===========================
+
+async function loadUsers() {
+    try {
+        users = await apiGet('users');
+        console.log('Benutzer aus API geladen:', users.length);
+    } catch (error) {
+        console.error('Fehler beim Laden der Benutzer:', error);
+        users = [];
+    }
+}
+
+async function renderUsers() {
+    const container = document.getElementById('users-list');
+    const countEl = document.getElementById('user-count');
+
+    if (!container) return;
+
+    // Load users if not loaded
+    if (users.length === 0) {
+        await loadUsers();
+    }
+
+    if (countEl) countEl.textContent = users.length;
+
+    if (users.length === 0) {
+        container.innerHTML = '<p class="empty-message">Keine Benutzer vorhanden</p>';
+        return;
+    }
+
+    const sorted = [...users].sort((a, b) => a.username.localeCompare(b.username));
+
+    container.innerHTML = sorted.map(user => {
+        const roleLabel = user.role === 'admin' ? 'Administrator' : 'Mitarbeiter';
+        const lastLogin = user.last_login
+            ? new Date(user.last_login).toLocaleString('de-DE')
+            : 'Noch nie';
+
+        return `
+            <div class="user-card ${user.is_active ? '' : 'inactive'}">
+                <div class="user-info">
+                    <div class="user-name">${escapeHtml(user.display_name || user.username)}</div>
+                    <div class="user-username">@${escapeHtml(user.username)}</div>
+                    <span class="user-role ${user.role}">${roleLabel}</span>
+                    <div class="user-last-login">Letzter Login: ${lastLogin}</div>
+                </div>
+                <div class="user-actions">
+                    <button class="btn-edit" onclick="editUser('${user.id}')">
+                        Bearbeiten
+                    </button>
+                    <button class="btn-delete" onclick="deleteUser('${user.id}')">
+                        Löschen
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function handleUserFormSubmit(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const userData = {
+        username: formData.get('username').trim(),
+        display_name: formData.get('displayName').trim() || undefined,
+        role: formData.get('role')
+    };
+
+    const password = formData.get('password');
+
+    // Validation
+    if (!userData.username) {
+        showToast('Bitte Benutzername eingeben', 'error');
+        return;
+    }
+
+    if (!editingUserId && (!password || password.length < 4)) {
+        showToast('Passwort muss mindestens 4 Zeichen haben', 'error');
+        return;
+    }
+
+    if (password && password.length >= 4) {
+        userData.password = password;
+    }
+
+    if (editingUserId) {
+        updateUser(editingUserId, userData);
+    } else {
+        createUser(userData);
+    }
+}
+
+async function createUser(userData) {
+    try {
+        const result = await apiPost('users', userData);
+        users.push(result);
+        renderUsers();
+        resetUserForm();
+        showToast(`Benutzer "${userData.username}" wurde angelegt`, 'success');
+    } catch (error) {
+        console.error('Fehler beim Anlegen:', error);
+        showToast(error.message || 'Fehler beim Anlegen des Benutzers', 'error');
+    }
+}
+
+async function updateUser(userId, userData) {
+    try {
+        const result = await apiPost(`users&id=${userId}`, userData);
+        const index = users.findIndex(u => u.id === userId);
+        if (index !== -1) {
+            users[index] = result;
+        }
+        renderUsers();
+        resetUserForm();
+        showToast('Benutzer wurde aktualisiert', 'success');
+    } catch (error) {
+        console.error('Fehler beim Aktualisieren:', error);
+        showToast(error.message || 'Fehler beim Aktualisieren', 'error');
+    }
+}
+
+function editUser(userId) {
+    const user = users.find(u => u.id === userId);
+
+    if (!user) {
+        showToast('Benutzer nicht gefunden', 'error');
+        return;
+    }
+
+    // Fill form
+    document.getElementById('user-username').value = user.username;
+    document.getElementById('user-display-name').value = user.display_name || '';
+    document.getElementById('user-password').value = '';
+    document.getElementById('user-role').value = user.role;
+
+    // Update UI
+    document.getElementById('user-form-title').textContent = 'Benutzer bearbeiten';
+    document.getElementById('btn-user-submit').textContent = 'Benutzer aktualisieren';
+    document.getElementById('btn-user-cancel').classList.remove('hidden');
+    document.getElementById('user-password').required = false;
+
+    editingUserId = userId;
+
+    // Scroll to form
+    document.querySelector('.user-form-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function deleteUser(userId) {
+    const user = users.find(u => u.id === userId);
+
+    if (!user) {
+        showToast('Benutzer nicht gefunden', 'error');
+        return;
+    }
+
+    confirmAction(
+        'Benutzer löschen',
+        `Möchten Sie "${user.display_name || user.username}" wirklich löschen?`,
+        async () => {
+            try {
+                await apiDelete(`users&id=${userId}`);
+                users = users.filter(u => u.id !== userId);
+                renderUsers();
+                showToast('Benutzer wurde gelöscht', 'success');
+            } catch (error) {
+                console.error('Fehler beim Löschen:', error);
+                showToast(error.message || 'Fehler beim Löschen', 'error');
+            }
+        }
+    );
+}
+
+function resetUserForm() {
+    const form = document.getElementById('user-form');
+    if (form) form.reset();
+
+    const title = document.getElementById('user-form-title');
+    if (title) title.textContent = 'Neuen Benutzer anlegen';
+
+    const submitBtn = document.getElementById('btn-user-submit');
+    if (submitBtn) submitBtn.textContent = 'Benutzer anlegen';
+
+    const cancelBtn = document.getElementById('btn-user-cancel');
+    if (cancelBtn) cancelBtn.classList.add('hidden');
+
+    const passwordInput = document.getElementById('user-password');
+    if (passwordInput) passwordInput.required = true;
+
+    editingUserId = null;
+}
+
+// ===========================
+// ACTIVITY LOG
+// ===========================
+
+async function loadActivityLog(userId = null) {
+    try {
+        let url = 'activity_log?limit=50';
+        if (userId) {
+            url += `&user_id=${userId}`;
+        }
+        return await apiGet(url);
+    } catch (error) {
+        console.error('Fehler beim Laden der Aktivitäten:', error);
+        return [];
+    }
+}
+
+async function renderActivityLog() {
+    const container = document.getElementById('activity-log');
+    const userFilter = document.getElementById('activity-user-filter');
+
+    if (!container) return;
+
+    const selectedUserId = userFilter?.value || null;
+    const activities = await loadActivityLog(selectedUserId);
+
+    if (activities.length === 0) {
+        container.innerHTML = '<p class="empty-message">Keine Aktivitäten vorhanden</p>';
+        return;
+    }
+
+    container.innerHTML = activities.map(activity => {
+        const timestamp = new Date(activity.timestamp).toLocaleString('de-DE');
+        const actionLabels = {
+            'login': 'Anmeldung',
+            'logout': 'Abmeldung',
+            'user_created': 'Benutzer erstellt',
+            'user_updated': 'Benutzer aktualisiert',
+            'user_deleted': 'Benutzer gelöscht',
+            'setting_changed': 'Einstellung geändert',
+            'preorder_status_changed': 'Bestellstatus geändert'
+        };
+
+        const actionLabel = actionLabels[activity.action] || activity.action;
+        let details = '';
+        if (activity.details) {
+            try {
+                const detailsObj = typeof activity.details === 'string'
+                    ? JSON.parse(activity.details)
+                    : activity.details;
+                if (detailsObj.ip) details = ` (IP: ${detailsObj.ip})`;
+                if (detailsObj.target_user) details = ` (Ziel: ${detailsObj.target_user})`;
+                if (detailsObj.key) details = ` (${detailsObj.key})`;
+            } catch (e) {}
+        }
+
+        return `
+            <div class="activity-item">
+                <div class="activity-time">${timestamp}</div>
+                <div class="activity-user">${escapeHtml(activity.username || 'System')}</div>
+                <div class="activity-action">${actionLabel}${details}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function populateActivityUserFilter() {
+    const filter = document.getElementById('activity-user-filter');
+    if (!filter) return;
+
+    // Keep current selection
+    const currentValue = filter.value;
+
+    filter.innerHTML = '<option value="">Alle Benutzer</option>';
+
+    users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.id;
+        option.textContent = user.display_name || user.username;
+        filter.appendChild(option);
+    });
+
+    // Restore selection
+    if (currentValue) filter.value = currentValue;
+}
+
+async function renderManagerBenutzer() {
+    console.log('Loading Benutzer data...');
+
+    // Load users if needed
+    await loadUsers();
+
+    // Render components
+    renderUsers();
+    populateActivityUserFilter();
+    renderActivityLog();
+}
+
+// ===========================
+// PREORDER MANAGEMENT
+// ===========================
+
+let preorderSettings = {
+    enabled: false,
+    start_time: '08:00',
+    end_time: '10:00'
+};
+let preorderProducts = {};
+let preorders = [];
+
+async function loadPreorderSettings() {
+    try {
+        const result = await apiGet('settings&key=preorder_settings');
+        if (result.value) {
+            preorderSettings = result.value;
+        }
+    } catch (error) {
+        console.error('Fehler beim Laden der Vorbestellungs-Einstellungen:', error);
+    }
+}
+
+async function savePreorderSettings() {
+    try {
+        await apiPost('settings', {
+            key: 'preorder_settings',
+            value: preorderSettings
+        });
+        showToast('Einstellungen gespeichert');
+    } catch (error) {
+        console.error('Fehler beim Speichern:', error);
+        showToast('Fehler beim Speichern', 'error');
+    }
+}
+
+async function loadPreorderProducts() {
+    try {
+        preorderProducts = await apiGet('preorder_products');
+    } catch (error) {
+        console.error('Fehler beim Laden der Vorbestellungs-Produkte:', error);
+        preorderProducts = {};
+    }
+}
+
+async function loadPreorders(status = null) {
+    try {
+        let url = 'preorders';
+        if (status) {
+            url += `&status=${status}`;
+        }
+        preorders = await apiGet(url);
+    } catch (error) {
+        console.error('Fehler beim Laden der Bestellungen:', error);
+        preorders = [];
+    }
+}
+
+function renderPreorderSettings() {
+    const enabledCheckbox = document.getElementById('preorder-enabled');
+    const startTimeInput = document.getElementById('preorder-start-time');
+    const endTimeInput = document.getElementById('preorder-end-time');
+
+    if (enabledCheckbox) enabledCheckbox.checked = preorderSettings.enabled || false;
+    if (startTimeInput) startTimeInput.value = preorderSettings.start_time || '08:00';
+    if (endTimeInput) endTimeInput.value = preorderSettings.end_time || '10:00';
+}
+
+function renderPreorderProductsList() {
+    const container = document.getElementById('preorder-products-list');
+    if (!container) return;
+
+    if (products.length === 0) {
+        container.innerHTML = '<p class="empty-message">Keine Produkte verfügbar</p>';
+        return;
+    }
+
+    // Group by category
+    const byCategory = {};
+    products.forEach(product => {
+        const cat = product.category || 'other';
+        if (!byCategory[cat]) byCategory[cat] = [];
+        byCategory[cat].push(product);
+    });
+
+    let html = '';
+    Object.keys(byCategory).sort().forEach(category => {
+        const catLabel = getCategoryLabel(category);
+        html += `<div class="preorder-category"><h4>${escapeHtml(catLabel)}</h4>`;
+
+        byCategory[category].sort((a, b) => a.name.localeCompare(b.name)).forEach(product => {
+            const config = preorderProducts[product.id] || { isAvailable: false, maxQuantity: 10 };
+            html += `
+                <div class="preorder-product-item ${config.isAvailable ? 'active' : ''}">
+                    <div class="product-info">
+                        <span class="product-name">${escapeHtml(product.name)}</span>
+                        <span class="product-price">${formatPrice(product.price)}</span>
+                    </div>
+                    <div class="preorder-product-controls">
+                        <label class="checkbox-label">
+                            <input type="checkbox" ${config.isAvailable ? 'checked' : ''}
+                                   onchange="togglePreorderProduct('${product.id}', this.checked)">
+                            <span>Verfügbar</span>
+                        </label>
+                        <div class="max-qty-control">
+                            <label>Max:</label>
+                            <input type="number" min="1" max="100" value="${config.maxQuantity}"
+                                   onchange="updatePreorderMaxQty('${product.id}', this.value)"
+                                   style="width: 60px;" ${!config.isAvailable ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+    });
+
+    container.innerHTML = html;
+}
+
+async function togglePreorderProduct(productId, isAvailable) {
+    const config = preorderProducts[productId] || { maxQuantity: 10 };
+
+    try {
+        await apiPost('preorder_products', {
+            productId: productId,
+            isAvailable: isAvailable,
+            maxQuantity: config.maxQuantity
+        });
+
+        preorderProducts[productId] = {
+            isAvailable: isAvailable,
+            maxQuantity: config.maxQuantity
+        };
+
+        renderPreorderProductsList();
+        showToast(isAvailable ? 'Produkt freigegeben' : 'Produkt gesperrt');
+    } catch (error) {
+        console.error('Fehler:', error);
+        showToast('Fehler beim Speichern', 'error');
+    }
+}
+
+async function updatePreorderMaxQty(productId, maxQuantity) {
+    const config = preorderProducts[productId] || { isAvailable: true };
+    const qty = parseInt(maxQuantity) || 10;
+
+    try {
+        await apiPost('preorder_products', {
+            productId: productId,
+            isAvailable: config.isAvailable,
+            maxQuantity: qty
+        });
+
+        preorderProducts[productId] = {
+            isAvailable: config.isAvailable,
+            maxQuantity: qty
+        };
+    } catch (error) {
+        console.error('Fehler:', error);
+        showToast('Fehler beim Speichern', 'error');
+    }
+}
+
+function renderPreordersList() {
+    const container = document.getElementById('preorder-orders-list');
+    if (!container) return;
+
+    if (preorders.length === 0) {
+        container.innerHTML = '<p class="empty-message">Keine Bestellungen vorhanden</p>';
+        return;
+    }
+
+    const statusLabels = {
+        'pending': 'Offen',
+        'completed': 'Abgeholt',
+        'cancelled': 'Storniert'
+    };
+
+    const statusColors = {
+        'pending': 'warning',
+        'completed': 'success',
+        'cancelled': 'danger'
+    };
+
+    container.innerHTML = preorders.map(order => {
+        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+        const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const timestamp = new Date(order.created_at).toLocaleString('de-DE');
+
+        return `
+            <div class="preorder-order-card ${order.status}">
+                <div class="order-header">
+                    <div class="order-customer">${escapeHtml(order.customer_name)}</div>
+                    <span class="order-status ${statusColors[order.status]}">${statusLabels[order.status]}</span>
+                </div>
+                <div class="order-time">${timestamp}</div>
+                <div class="order-items">
+                    ${items.map(item => `
+                        <div class="order-item">
+                            <span>${item.quantity}x ${escapeHtml(item.productName)}</span>
+                            <span>${formatPrice(item.price * item.quantity)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="order-total">
+                    <strong>Gesamt: ${formatPrice(total)}</strong>
+                </div>
+                ${order.status === 'pending' ? `
+                    <div class="order-actions">
+                        <button class="btn-small btn-primary" onclick="updatePreorderStatus('${order.id}', 'completed')">
+                            Als abgeholt markieren
+                        </button>
+                        <button class="btn-small btn-secondary" onclick="updatePreorderStatus('${order.id}', 'cancelled')">
+                            Stornieren
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+async function updatePreorderStatus(orderId, status) {
+    try {
+        await apiPost(`preorders&id=${orderId}`, { status: status });
+        showToast('Status aktualisiert');
+
+        // Reload
+        const filterValue = document.getElementById('preorder-status-filter')?.value || '';
+        await loadPreorders(filterValue || null);
+        renderPreordersList();
+    } catch (error) {
+        console.error('Fehler:', error);
+        showToast('Fehler beim Aktualisieren', 'error');
+    }
+}
+
+async function renderManagerVorbestellung() {
+    console.log('Loading Vorbestellung data...');
+
+    // Load all data
+    await Promise.all([
+        loadPreorderSettings(),
+        loadPreorderProducts(),
+        loadPreorders('pending')
+    ]);
+
+    // Render components
+    renderPreorderSettings();
+    renderPreorderProductsList();
+    renderPreordersList();
+}
+
+// ===========================
 // EXPOSE FOR INLINE HANDLERS
 // ===========================
 
@@ -1671,3 +2282,8 @@ window.deleteLoyaltyCardType = deleteLoyaltyCardType;
 window.toggleLoyaltyCardTypeActive = toggleLoyaltyCardTypeActive;
 window.editCategory = editCategory;
 window.deleteCategory = deleteCategory;
+window.editUser = editUser;
+window.deleteUser = deleteUser;
+window.togglePreorderProduct = togglePreorderProduct;
+window.updatePreorderMaxQty = updatePreorderMaxQty;
+window.updatePreorderStatus = updatePreorderStatus;

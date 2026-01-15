@@ -22,6 +22,8 @@
             <button class="tab-btn" data-tab="bilanz">Bilanz</button>
             <button class="tab-btn" data-tab="statistik">Statistik</button>
             <button class="tab-btn" data-tab="inventar">Inventar</button>
+            <button class="tab-btn" data-tab="benutzer">Benutzer</button>
+            <button class="tab-btn" data-tab="vorbestellung">Vorbestellung</button>
         </nav>
 
         <!-- VERWALTUNG TAB -->
@@ -423,6 +425,155 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- VORBESTELLUNG TAB -->
+        <div id="vorbestellung-tab" class="tab-content">
+            <div class="vorbestellung-container">
+                <h2>Vorbestellungen verwalten</h2>
+
+                <!-- Einstellungen -->
+                <section class="preorder-settings-section">
+                    <h3>Einstellungen</h3>
+                    <form id="preorder-settings-form">
+                        <div class="form-row">
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="preorder-enabled" name="enabled">
+                                    <span>Vorbestellungen aktiviert</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="preorder-start-time">Startzeit</label>
+                                <input type="time" id="preorder-start-time" name="startTime" value="08:00">
+                            </div>
+                            <div class="form-group">
+                                <label for="preorder-end-time">Endzeit</label>
+                                <input type="time" id="preorder-end-time" name="endTime" value="10:00">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">
+                                Einstellungen speichern
+                            </button>
+                            <a href="order.html" target="_blank" class="btn-secondary" style="text-align: center; text-decoration: none;">
+                                Bestellseite öffnen
+                            </a>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Produkt-Freigabe -->
+                <section class="preorder-products-section">
+                    <h3>Produkte für Vorbestellung freigeben</h3>
+                    <div class="preorder-products-list" id="preorder-products-list">
+                        <p class="empty-message">Keine Produkte verfügbar</p>
+                    </div>
+                </section>
+
+                <!-- Aktuelle Bestellungen -->
+                <section class="preorder-orders-section">
+                    <div class="section-header">
+                        <h3>Aktuelle Bestellungen</h3>
+                        <div class="header-actions">
+                            <select id="preorder-status-filter">
+                                <option value="">Alle Status</option>
+                                <option value="pending" selected>Offen</option>
+                                <option value="completed">Abgeholt</option>
+                                <option value="cancelled">Storniert</option>
+                            </select>
+                            <button class="btn-secondary btn-small" id="btn-refresh-preorders">
+                                Aktualisieren
+                            </button>
+                        </div>
+                    </div>
+                    <div class="preorder-orders-list" id="preorder-orders-list">
+                        <p class="empty-message">Keine Bestellungen vorhanden</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- BENUTZER TAB -->
+        <div id="benutzer-tab" class="tab-content">
+            <div class="benutzer-container">
+                <h2>Benutzerverwaltung</h2>
+
+                <!-- Neuer Benutzer Formular -->
+                <section class="user-form-section">
+                    <h3 id="user-form-title">Neuen Benutzer anlegen</h3>
+
+                    <form id="user-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="user-username">Benutzername *</label>
+                                <input type="text" id="user-username" name="username" required
+                                       placeholder="z.B. max.mustermann" autocomplete="off">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="user-display-name">Anzeigename</label>
+                                <input type="text" id="user-display-name" name="displayName"
+                                       placeholder="z.B. Max Mustermann">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="user-password">Passwort *</label>
+                                <input type="password" id="user-password" name="password"
+                                       placeholder="Mindestens 4 Zeichen" autocomplete="new-password">
+                                <small id="password-hint">Beim Bearbeiten leer lassen, um Passwort nicht zu ändern</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="user-role">Rolle *</label>
+                                <select id="user-role" name="role" required>
+                                    <option value="staff">Mitarbeiter</option>
+                                    <option value="admin">Administrator</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary" id="btn-user-submit">
+                                Benutzer anlegen
+                            </button>
+                            <button type="button" class="btn-secondary hidden" id="btn-user-cancel">
+                                Abbrechen
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Benutzer-Liste -->
+                <section class="users-list-section">
+                    <h3>Alle Benutzer (<span id="user-count">0</span>)</h3>
+                    <div class="users-list" id="users-list">
+                        <p class="empty-message">Keine Benutzer vorhanden</p>
+                    </div>
+                </section>
+
+                <!-- Aktivitäts-Log -->
+                <section class="activity-log-section">
+                    <h3>Letzte Aktivitäten</h3>
+                    <div class="activity-controls">
+                        <select id="activity-user-filter">
+                            <option value="">Alle Benutzer</option>
+                        </select>
+                        <button class="btn-secondary btn-small" id="btn-refresh-activity">
+                            Aktualisieren
+                        </button>
+                    </div>
+                    <div class="activity-log" id="activity-log">
+                        <p class="empty-message">Keine Aktivitäten vorhanden</p>
                     </div>
                 </section>
             </div>

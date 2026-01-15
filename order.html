@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FOS Bar - Vorbestellung</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            margin: 0;
+            padding: 0;
+        }
+
+        .order-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1rem;
+            min-height: 100vh;
+        }
+
+        .order-header {
+            text-align: center;
+            padding: 2rem 0;
+            color: white;
+        }
+
+        .order-header h1 {
+            color: var(--primary, #4ecdc4);
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        .order-header p {
+            color: var(--text-muted, #888);
+            margin: 0;
+        }
+
+        .status-card {
+            background: var(--card-bg, #1e1e2e);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .status-card.closed {
+            border: 2px solid var(--danger, #ff6b6b);
+        }
+
+        .status-card.open {
+            border: 2px solid var(--success, #4ecdc4);
+        }
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-card.closed .status-title {
+            color: var(--danger, #ff6b6b);
+        }
+
+        .status-card.open .status-title {
+            color: var(--success, #4ecdc4);
+        }
+
+        .status-message {
+            color: var(--text-muted, #888);
+        }
+
+        .time-info {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border, #333);
+            font-size: 0.9rem;
+            color: var(--text-muted, #888);
+        }
+
+        .order-form {
+            background: var(--card-bg, #1e1e2e);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section h3 {
+            color: var(--primary, #4ecdc4);
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--border, #333);
+            border-radius: 0.5rem;
+            background: var(--input-bg, #2a2a3a);
+            color: var(--text, #e0e0e0);
+            font-size: 1.1rem;
+            box-sizing: border-box;
+        }
+
+        .name-input:focus {
+            outline: none;
+            border-color: var(--primary, #4ecdc4);
+        }
+
+        .products-grid {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .product-item {
+            background: var(--bg, #2a2a3a);
+            border: 2px solid var(--border, #333);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .product-item.selected {
+            border-color: var(--primary, #4ecdc4);
+            background: rgba(78, 205, 196, 0.1);
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: var(--text, #e0e0e0);
+            margin-bottom: 0.25rem;
+        }
+
+        .product-price {
+            font-size: 0.9rem;
+            color: var(--primary, #4ecdc4);
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .quantity-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            background: var(--primary, #4ecdc4);
+            color: #000;
+            font-size: 1.25rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .quantity-btn:disabled {
+            background: var(--border, #333);
+            color: var(--text-muted, #888);
+            cursor: not-allowed;
+        }
+
+        .quantity-btn:not(:disabled):hover {
+            transform: scale(1.1);
+        }
+
+        .quantity-value {
+            min-width: 2rem;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text, #e0e0e0);
+        }
+
+        .order-summary {
+            background: var(--bg, #2a2a3a);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            color: var(--text, #e0e0e0);
+        }
+
+        .summary-row.total {
+            border-top: 2px solid var(--border, #333);
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .summary-row.total .price {
+            color: var(--primary, #4ecdc4);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1.25rem;
+            background: var(--primary, #4ecdc4);
+            color: #000;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 1.5rem;
+        }
+
+        .submit-btn:disabled {
+            background: var(--border, #333);
+            color: var(--text-muted, #888);
+            cursor: not-allowed;
+        }
+
+        .submit-btn:not(:disabled):hover {
+            background: var(--primary-hover, #3dbdb5);
+            transform: translateY(-2px);
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .success-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--success, #4ecdc4);
+            margin-bottom: 0.5rem;
+        }
+
+        .success-text {
+            color: var(--text-muted, #888);
+            margin-bottom: 1.5rem;
+        }
+
+        .order-details {
+            background: var(--bg, #2a2a3a);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: left;
+        }
+
+        .order-details h4 {
+            color: var(--primary, #4ecdc4);
+            margin: 0 0 0.75rem 0;
+        }
+
+        .order-detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            color: var(--text, #e0e0e0);
+        }
+
+        .new-order-btn {
+            margin-top: 1.5rem;
+            padding: 1rem 2rem;
+            background: transparent;
+            border: 2px solid var(--primary, #4ecdc4);
+            color: var(--primary, #4ecdc4);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .new-order-btn:hover {
+            background: var(--primary, #4ecdc4);
+            color: #000;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted, #888);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border, #333);
+            border-top-color: var(--primary, #4ecdc4);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .order-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .product-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .quantity-control {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="order-container">
+        <div class="order-header">
+            <h1>FOS Bar</h1>
+            <p>Vorbestellung</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Lade Vorbestellungen...</p>
+        </div>
+
+        <!-- Closed State -->
+        <div id="closed-state" style="display: none;">
+            <div class="status-card closed">
+                <div class="status-icon">X</div>
+                <div class="status-title">Vorbestellungen nicht verfugbar</div>
+                <div class="status-message" id="closed-message">
+                    Vorbestellungen sind derzeit nicht moglich.
+                </div>
+                <div class="time-info" id="time-info" style="display: none;">
+                    Bestellzeitraum: <span id="order-times"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Form -->
+        <div id="order-form-state" style="display: none;">
+            <div class="status-card open">
+                <div class="status-icon">!</div>
+                <div class="status-title">Vorbestellung offen</div>
+                <div class="status-message">
+                    Bestellen Sie jetzt und holen Sie Ihre Bestellung spater ab.
+                </div>
+                <div class="time-info">
+                    Bestellzeitraum: <span id="order-times-open"></span>
+                </div>
+            </div>
+
+            <form class="order-form" id="preorder-form">
+                <div class="form-section">
+                    <h3>Ihr Name</h3>
+                    <input type="text" class="name-input" id="customer-name"
+                           placeholder="Vor- und Nachname" required autocomplete="name">
+                </div>
+
+                <div class="form-section">
+                    <h3>Produkte wahlen</h3>
+                    <div class="products-grid" id="products-grid">
+                        <!-- Products will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="order-summary" id="order-summary" style="display: none;">
+                    <div id="summary-items"></div>
+                    <div class="summary-row total">
+                        <span>Gesamt</span>
+                        <span class="price" id="total-price">0,00 EUR</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn" disabled>
+                    Bestellung aufgeben
+                </button>
+            </form>
+        </div>
+
+        <!-- Success State -->
+        <div id="success-state" class="success-message">
+            <div class="success-icon">OK</div>
+            <div class="success-title">Bestellung aufgegeben!</div>
+            <div class="success-text">
+                Ihre Bestellung wurde erfolgreich aufgegeben.<br>
+                Bitte holen Sie sie an der Bar ab.
+            </div>
+            <div class="order-details" id="order-details">
+                <h4>Ihre Bestellung</h4>
+                <div id="order-items"></div>
+            </div>
+            <button class="new-order-btn" onclick="resetOrder()">Neue Bestellung</button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let products = [];
+        let quantities = {};
+
+        // Load preorder status and products
+        async function loadPreorderData() {
+            try {
+                const response = await fetch('api/?action=public_preorder');
+                const data = await response.json();
+
+                document.getElementById('loading-state').style.display = 'none';
+
+                if (!data.enabled) {
+                    showClosedState('Vorbestellungen sind derzeit nicht moglich.');
+                    return;
+                }
+
+                if (!data.inTimeWindow) {
+                    showClosedState(
+                        'Vorbestellungen sind nur im festgelegten Zeitfenster moglich.',
+                        data.startTime,
+                        data.endTime
+                    );
+                    return;
+                }
+
+                // Show order form
+                products = data.products;
+                document.getElementById('order-times-open').textContent =
+                    `${data.startTime} - ${data.endTime} Uhr`;
+                renderProducts();
+                document.getElementById('order-form-state').style.display = 'block';
+
+            } catch (error) {
+                console.error('Fehler beim Laden:', error);
+                showClosedState('Verbindungsfehler. Bitte versuchen Sie es spater erneut.');
+            }
+        }
+
+        function showClosedState(message, startTime = null, endTime = null) {
+            document.getElementById('closed-message').textContent = message;
+
+            if (startTime && endTime) {
+                document.getElementById('order-times').textContent = `${startTime} - ${endTime} Uhr`;
+                document.getElementById('time-info').style.display = 'block';
+            }
+
+            document.getElementById('closed-state').style.display = 'block';
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+
+            if (products.length === 0) {
+                grid.innerHTML = '<p style="color: var(--text-muted);">Keine Produkte verfugbar.</p>';
+                return;
+            }
+
+            grid.innerHTML = products.map(product => {
+                quantities[product.id] = 0;
+                return `
+                    <div class="product-item" id="product-${product.id}">
+                        <div class="product-info">
+                            <div class="product-name">${escapeHtml(product.name)}</div>
+                            <div class="product-price">${formatPrice(product.price)}</div>
+                        </div>
+                        <div class="quantity-control">
+                            <button type="button" class="quantity-btn"
+                                    onclick="changeQuantity('${product.id}', -1)"
+                                    id="minus-${product.id}" disabled>-</button>
+                            <span class="quantity-value" id="qty-${product.id}">0</span>
+                            <button type="button" class="quantity-btn"
+                                    onclick="changeQuantity('${product.id}', 1)"
+                                    id="plus-${product.id}">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function changeQuantity(productId, delta) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const maxQty = product.maxQuantity || 10;
+            const newQty = Math.max(0, Math.min(maxQty, quantities[productId] + delta));
+            quantities[productId] = newQty;
+
+            // Update UI
+            document.getElementById(`qty-${productId}`).textContent = newQty;
+            document.getElementById(`minus-${productId}`).disabled = newQty <= 0;
+            document.getElementById(`plus-${productId}`).disabled = newQty >= maxQty;
+
+            const item = document.getElementById(`product-${productId}`);
+            item.classList.toggle('selected', newQty > 0);
+
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const items = [];
+            let total = 0;
+
+            for (const productId in quantities) {
+                if (quantities[productId] > 0) {
+                    const product = products.find(p => p.id === productId);
+                    if (product) {
+                        const subtotal = product.price * quantities[productId];
+                        total += subtotal;
+                        items.push({
+                            name: product.name,
+                            quantity: quantities[productId],
+                            price: subtotal
+                        });
+                    }
+                }
+            }
+
+            const summaryContainer = document.getElementById('order-summary');
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (items.length === 0) {
+                summaryContainer.style.display = 'none';
+                submitBtn.disabled = true;
+            } else {
+                document.getElementById('summary-items').innerHTML = items.map(item => `
+                    <div class="summary-row">
+                        <span>${item.quantity}x ${escapeHtml(item.name)}</span>
+                        <span>${formatPrice(item.price)}</span>
+                    </div>
+                `).join('');
+                document.getElementById('total-price').textContent = formatPrice(total);
+                summaryContainer.style.display = 'block';
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Form submission
+        document.getElementById('preorder-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const customerName = document.getElementById('customer-name').value.trim();
+            if (!customerName) {
+                alert('Bitte geben Sie Ihren Namen ein.');
+                return;
+            }
+
+            // Build items array
+            const items = [];
+            for (const productId in quantities) {
+                if (quantities[productId] > 0) {
+                    const product = products.find(p => p.id === productId);
+                    if (product) {
+                        items.push({
+                            productId: product.id,
+                            productName: product.name,
+                            price: product.price,
+                            quantity: quantities[productId]
+                        });
+                    }
+                }
+            }
+
+            if (items.length === 0) {
+                alert('Bitte wahlen Sie mindestens ein Produkt.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Wird gesendet...';
+
+            try {
+                const response = await fetch('api/?action=public_preorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerName: customerName,
+                        items: items
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showSuccessState(customerName, items);
+                } else {
+                    throw new Error(data.error || 'Fehler beim Aufgeben der Bestellung');
+                }
+
+            } catch (error) {
+                console.error('Fehler:', error);
+                alert('Fehler: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Bestellung aufgeben';
+            }
+        });
+
+        function showSuccessState(customerName, items) {
+            document.getElementById('order-form-state').style.display = 'none';
+
+            let total = 0;
+            document.getElementById('order-items').innerHTML = items.map(item => {
+                const subtotal = item.price * item.quantity;
+                total += subtotal;
+                return `
+                    <div class="order-detail-item">
+                        <span>${item.quantity}x ${escapeHtml(item.productName)}</span>
+                        <span>${formatPrice(subtotal)}</span>
+                    </div>
+                `;
+            }).join('') + `
+                <div class="order-detail-item" style="border-top: 1px solid var(--border); margin-top: 0.5rem; padding-top: 0.5rem; font-weight: bold;">
+                    <span>Gesamt</span>
+                    <span>${formatPrice(total)}</span>
+                </div>
+                <div class="order-detail-item" style="margin-top: 0.5rem;">
+                    <span>Name</span>
+                    <span>${escapeHtml(customerName)}</span>
+                </div>
+            `;
+
+            document.getElementById('success-state').classList.add('show');
+        }
+
+        function resetOrder() {
+            // Reset quantities
+            for (const productId in quantities) {
+                quantities[productId] = 0;
+            }
+
+            // Reset form
+            document.getElementById('customer-name').value = '';
+            document.getElementById('submit-btn').textContent = 'Bestellung aufgeben';
+
+            // Reset UI
+            renderProducts();
+            updateSummary();
+
+            // Show form again
+            document.getElementById('success-state').classList.remove('show');
+            document.getElementById('order-form-state').style.display = 'block';
+        }
+
+        // Helper functions
+        function formatPrice(value) {
+            return value.toFixed(2).replace('.', ',') + ' EUR';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        loadPreorderData();
+    </script>
+</body>
+</html>
