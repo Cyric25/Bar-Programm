@@ -546,7 +546,8 @@ function handleLoyaltyFormSubmit(e) {
         name: formData.get('name').trim(),
         type: type,
         bindingType: bindingType,
-        description: formData.get('description').trim() || undefined
+        description: formData.get('description').trim() || undefined,
+        allowUpgrade: document.getElementById('loyalty-allow-upgrade').checked
     };
 
     // Type-specific fields
@@ -689,6 +690,7 @@ function editLoyaltyCardType(cardTypeId) {
     document.getElementById('loyalty-type').value = cardType.type;
     document.getElementById('loyalty-binding').value = cardType.bindingType;
     document.getElementById('loyalty-description').value = cardType.description || '';
+    document.getElementById('loyalty-allow-upgrade').checked = cardType.allowUpgrade || false;
 
     if (cardType.type === 'buy_n_get_1') {
         document.getElementById('loyalty-required').value = cardType.requiredPurchases;

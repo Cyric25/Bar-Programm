@@ -1689,14 +1689,42 @@ function processLoyaltyForPurchase(person, product, sale) {
 
         // ERST prüfen ob Karte bereits voll ist (Bonus einlösen)
         if (card.currentStamps >= requiredStampsForCard) {
-            // Prüfen ob genug Stempel für dieses Produkt vorhanden sind
-            if (card.currentStamps < stampsForProduct) {
-                // Nicht genug Stempel für dieses teurere Produkt
-                return;
+            // Bonus-Einlösung: Prüfen ob dieses Produkt eingelöst werden kann
+
+            if (stampsForProduct > 1) {
+                // Teureres Produkt - prüfen ob Upgrade erlaubt
+                if (!cardType.allowUpgrade) {
+                    // Upgrade NICHT erlaubt - Bonus nur für Basis-Produkt
+                    // Normaler Stempel wird hinzugefügt, Bonus bleibt erhalten
+                    card.currentStamps += stampsForProduct;
+                    card.history.push({
+                        timestamp: new Date().toISOString(),
+                        action: 'stamp',
+                        productId: product.id,
+                        productName: product.name,
+                        stampsAdded: stampsForProduct,
+                        note: 'Bonus nur für günstigstes Produkt'
+                    });
+                    return;
+                }
+                // Upgrade erlaubt - aber prüfen ob genug Stempel
+                // Für jedes "Vielfache" braucht man eine volle Karte
+                if (card.currentStamps < stampsForProduct * requiredStampsForCard) {
+                    // Nicht genug Stempel für teureres Produkt
+                    card.currentStamps += stampsForProduct;
+                    card.history.push({
+                        timestamp: new Date().toISOString(),
+                        action: 'stamp',
+                        productId: product.id,
+                        productName: product.name,
+                        stampsAdded: stampsForProduct,
+                        note: `Braucht ${stampsForProduct * requiredStampsForCard} Stempel für dieses Produkt`
+                    });
+                    return;
+                }
             }
 
-            // Karte ist voll - BONUS einlösen!
-            // Bei teureren Produkten werden entsprechend mehr Stempel abgezogen
+            // Karte ist voll und Produkt kann eingelöst werden - BONUS einlösen!
             card.history.push({
                 timestamp: new Date().toISOString(),
                 action: 'redeem',

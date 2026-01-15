@@ -97,9 +97,17 @@ class Database {
                 get_count INTEGER,
                 description TEXT,
                 is_active INTEGER DEFAULT 1,
+                allow_upgrade INTEGER DEFAULT 0,
                 created_at TEXT
             )
         ");
+
+        // Migration: allow_upgrade Spalte hinzufügen falls nicht vorhanden
+        try {
+            $this->pdo->exec("ALTER TABLE loyalty_card_types ADD COLUMN allow_upgrade INTEGER DEFAULT 0");
+        } catch (PDOException $e) {
+            // Spalte existiert bereits - ignorieren
+        }
 
         $this->pdo->exec("
             CREATE TABLE IF NOT EXISTS inventory (
@@ -393,6 +401,7 @@ class Database {
                 'getCount' => $type['get_count'],
                 'description' => $type['description'],
                 'isActive' => (bool)$type['is_active'],
+                'allowUpgrade' => (bool)($type['allow_upgrade'] ?? 0),
                 'createdAt' => $type['created_at']
             ];
         }, $types);
@@ -402,8 +411,8 @@ class Database {
         $stmt = $this->pdo->prepare("
             INSERT OR REPLACE INTO loyalty_card_types
             (id, name, type, binding_type, product_id, product_ids, category_id,
-             required_purchases, pay_count, get_count, description, is_active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             required_purchases, pay_count, get_count, description, is_active, allow_upgrade, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $type['id'],
@@ -418,6 +427,7 @@ class Database {
             $type['getCount'] ?? null,
             $type['description'] ?? null,
             isset($type['isActive']) ? ($type['isActive'] ? 1 : 0) : 1,
+            isset($type['allowUpgrade']) ? ($type['allowUpgrade'] ? 1 : 0) : 0,
             $type['createdAt'] ?? date('c')
         ]);
         return $type;
