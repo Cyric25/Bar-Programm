@@ -22,6 +22,7 @@
             <button class="tab-btn" data-tab="bilanz">Bilanz</button>
             <button class="tab-btn" data-tab="statistik">Statistik</button>
             <button class="tab-btn" data-tab="inventar">Inventar</button>
+            <button class="tab-btn" data-tab="datenbank">Datenbank</button>
             <button class="tab-btn" data-tab="benutzer">Benutzer</button>
             <button class="tab-btn" data-tab="vorbestellung">Vorbestellung</button>
         </nav>
@@ -58,6 +59,13 @@
                             <div class="form-group">
                                 <label for="category-color">Farbe</label>
                                 <input type="color" id="category-color" name="color" value="#3b82f6">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="category-sort-order">Sortierung</label>
+                                <input type="number" id="category-sort-order" name="sortOrder"
+                                       value="0" min="0" placeholder="0">
+                                <small>Niedrigere Zahlen werden zuerst angezeigt</small>
                             </div>
                         </div>
 
@@ -189,6 +197,7 @@
                                 <select id="loyalty-type" name="type" required>
                                     <option value="buy_n_get_1">Kaufe N, bekomme 1 gratis</option>
                                     <option value="pay_n_get_m">Zahle N, bekomme M</option>
+                                    <option value="stamps_only">Nur Stempel sammeln (ohne Bonus)</option>
                                 </select>
                             </div>
 
@@ -504,6 +513,78 @@
                     </div>
                     <div class="preorder-orders-list" id="preorder-orders-list">
                         <p class="empty-message">Keine Bestellungen vorhanden</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- DATENBANK TAB -->
+        <div id="datenbank-tab" class="tab-content">
+            <div class="datenbank-container">
+                <h2>Datenbank-Übersicht</h2>
+
+                <!-- Filter & Export -->
+                <section class="db-controls-section">
+                    <div class="db-filters">
+                        <div class="filter-group">
+                            <label>Zeitraum:</label>
+                            <input type="date" id="db-date-from">
+                            <span>bis</span>
+                            <input type="date" id="db-date-to">
+                        </div>
+                        <div class="filter-group">
+                            <label>Kategorie:</label>
+                            <select id="db-category-filter">
+                                <option value="">Alle Kategorien</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Suche:</label>
+                            <input type="text" id="db-search" placeholder="Name, Produkt...">
+                        </div>
+                        <button class="btn-primary btn-small" id="btn-db-apply-filter">
+                            Filter anwenden
+                        </button>
+                        <button class="btn-secondary btn-small" id="btn-db-reset-filter">
+                            Zurücksetzen
+                        </button>
+                    </div>
+                    <div class="db-export-buttons">
+                        <button class="btn-export" id="btn-db-export-csv">
+                            CSV Export
+                        </button>
+                        <button class="btn-export" id="btn-db-export-excel">
+                            Excel Export
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Daten-Tabs -->
+                <div class="db-data-tabs">
+                    <button class="db-tab-btn active" data-table="sales">Verkäufe</button>
+                    <button class="db-tab-btn" data-table="products">Produkte</button>
+                    <button class="db-tab-btn" data-table="categories">Kategorien</button>
+                    <button class="db-tab-btn" data-table="persons">Personen</button>
+                    <button class="db-tab-btn" data-table="debtors">Schuldner</button>
+                    <button class="db-tab-btn" data-table="inventory">Inventar</button>
+                    <button class="db-tab-btn" data-table="preorders">Vorbestellungen</button>
+                </div>
+
+                <!-- Daten-Tabelle -->
+                <section class="db-table-section">
+                    <div class="db-table-info">
+                        <span id="db-record-count">0 Einträge</span>
+                        <span id="db-table-name">Verkäufe</span>
+                    </div>
+                    <div class="db-table-wrapper">
+                        <table class="db-table" id="db-data-table">
+                            <thead id="db-table-head">
+                                <tr><th>Laden...</th></tr>
+                            </thead>
+                            <tbody id="db-table-body">
+                                <tr><td>Daten werden geladen...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </section>
             </div>

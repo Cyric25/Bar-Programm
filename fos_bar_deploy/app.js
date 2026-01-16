@@ -361,16 +361,21 @@ function renderProducts() {
     // Render products by category
     categoryOrder.forEach(category => {
         if (groupedProducts[category] && groupedProducts[category].length > 0) {
-            // Add category header
+            const categoryColor = getCategoryColor(category);
+
+            // Add category header with color
             const header = document.createElement('div');
             header.className = 'category-header';
-            header.textContent = categoryLabels[category] || category;
+            header.style.borderLeftColor = categoryColor;
+            header.innerHTML = `<span class="category-color-indicator" style="background:${categoryColor}"></span>${categoryLabels[category] || category}`;
             grid.appendChild(header);
 
             // Add products in this category
             groupedProducts[category].forEach(product => {
                 const btn = document.createElement('button');
-                btn.className = `product-btn ${product.category}`;
+                btn.className = 'product-btn';
+                btn.style.borderColor = categoryColor;
+                btn.style.background = `linear-gradient(135deg, ${categoryColor}15, #ffffff)`;
                 btn.innerHTML = `
                     <div class="product-name">${product.name}</div>
                     <div class="product-price">${formatPrice(product.price)}</div>
@@ -384,14 +389,19 @@ function renderProducts() {
     // Render any products with unknown categories
     Object.keys(groupedProducts).forEach(category => {
         if (!categoryOrder.includes(category)) {
+            const categoryColor = getCategoryColor(category);
+
             const header = document.createElement('div');
             header.className = 'category-header';
-            header.textContent = category;
+            header.style.borderLeftColor = categoryColor;
+            header.innerHTML = `<span class="category-color-indicator" style="background:${categoryColor}"></span>${category}`;
             grid.appendChild(header);
 
             groupedProducts[category].forEach(product => {
                 const btn = document.createElement('button');
-                btn.className = `product-btn ${product.category}`;
+                btn.className = 'product-btn';
+                btn.style.borderColor = categoryColor;
+                btn.style.background = `linear-gradient(135deg, ${categoryColor}15, #ffffff)`;
                 btn.innerHTML = `
                     <div class="product-name">${product.name}</div>
                     <div class="product-price">${formatPrice(product.price)}</div>
@@ -1460,16 +1470,21 @@ function renderCreditsProducts() {
     // Render products by category
     categoryOrder.forEach(category => {
         if (groupedProducts[category] && groupedProducts[category].length > 0) {
+            const categoryColor = getCategoryColor(category);
+
             // Add category header
             const header = document.createElement('div');
             header.className = 'category-header';
-            header.textContent = categoryLabels[category] || category;
+            header.style.borderLeftColor = categoryColor;
+            header.innerHTML = `<span class="category-color-indicator" style="background:${categoryColor}"></span>${categoryLabels[category] || category}`;
             grid.appendChild(header);
 
             // Add products
             groupedProducts[category].forEach(product => {
                 const btn = document.createElement('button');
-                btn.className = `product-btn ${product.category}`;
+                btn.className = 'product-btn';
+                btn.style.borderColor = categoryColor;
+                btn.style.background = `linear-gradient(135deg, ${categoryColor}15, #ffffff)`;
                 btn.innerHTML = `
                     <div class="product-name">${product.name}</div>
                     <div class="product-price">${formatPrice(product.price)}</div>
@@ -1483,14 +1498,19 @@ function renderCreditsProducts() {
     // Render any products with unknown categories
     Object.keys(groupedProducts).forEach(category => {
         if (!categoryOrder.includes(category)) {
+            const categoryColor = getCategoryColor(category);
+
             const header = document.createElement('div');
             header.className = 'category-header';
-            header.textContent = category;
+            header.style.borderLeftColor = categoryColor;
+            header.innerHTML = `<span class="category-color-indicator" style="background:${categoryColor}"></span>${category}`;
             grid.appendChild(header);
 
             groupedProducts[category].forEach(product => {
                 const btn = document.createElement('button');
-                btn.className = `product-btn ${product.category}`;
+                btn.className = 'product-btn';
+                btn.style.borderColor = categoryColor;
+                btn.style.background = `linear-gradient(135deg, ${categoryColor}15, #ffffff)`;
                 btn.innerHTML = `
                     <div class="product-name">${product.name}</div>
                     <div class="product-price">${formatPrice(product.price)}</div>
@@ -1686,15 +1706,41 @@ function processLoyaltyForPurchase(person, product, sale) {
         // Prüfen ob Produkt zur Karte passt
         if (!isProductEligibleForCard(product, cardType)) return;
 
-        const requiredStampsForCard = cardType.type === 'buy_n_get_1'
-            ? cardType.requiredPurchases
-            : cardType.payCount;
+        const requiredStampsForCard = cardType.type === 'pay_n_get_m'
+            ? cardType.payCount
+            : cardType.requiredPurchases;
 
         // Berechne benötigte Stempel für dieses Produkt (Mehrfach-Stempel für teurere Produkte)
         const stampsForProduct = getRequiredStampsForProduct(product, cardType);
 
         // Wenn Preis kein Vielfaches ist, überspringen
         if (stampsForProduct < 0) return;
+
+        // Für stamps_only Karten: Stempel sammeln, Karte verschwindet wenn voll
+        if (cardType.type === 'stamps_only') {
+            card.currentStamps += stampsForProduct;
+            card.history.push({
+                timestamp: new Date().toISOString(),
+                action: 'stamp',
+                productId: product.id,
+                productName: product.name,
+                saleId: sale.id,
+                stampsAdded: stampsForProduct
+            });
+
+            // Karte voll? Dann zur Löschung markieren
+            if (card.currentStamps >= requiredStampsForCard) {
+                card.history.push({
+                    timestamp: new Date().toISOString(),
+                    action: 'complete',
+                    note: 'Stempelkarte vollständig'
+                });
+                card.completedCards = (card.completedCards || 0) + 1;
+                cardsToRemove.push(card.id);
+                showToast(`Stempelkarte "${cardType.name}" vollständig!`, 'success');
+            }
+            return;
+        }
 
         // ERST prüfen ob Karte bereits voll ist (Bonus einlösen)
         if (card.currentStamps >= requiredStampsForCard) {
@@ -1852,9 +1898,9 @@ function renderPersonLoyaltyCards(personId, highlightCardId = null) {
 
     container.innerHTML = activeCards.map(card => {
         const cardType = loyaltyCardTypes.find(ct => ct.id === card.cardTypeId);
-        const requiredStamps = cardType.type === 'buy_n_get_1'
-            ? cardType.requiredPurchases
-            : cardType.payCount;
+        const requiredStamps = cardType.type === 'pay_n_get_m'
+            ? cardType.payCount
+            : cardType.requiredPurchases;
 
         // Stempel-Visualisierung erstellen
         let stampsHtml = '';
@@ -1862,9 +1908,11 @@ function renderPersonLoyaltyCards(personId, highlightCardId = null) {
             const isFilled = i < card.currentStamps;
             stampsHtml += `<div class="stamp ${isFilled ? 'filled' : ''}">${isFilled ? '✓' : (i + 1)}</div>`;
         }
-        // Gratis-Stempel hinzufügen
-        const freeLabel = cardType.type === 'buy_n_get_1' ? 'GRATIS' : `+${cardType.getCount - cardType.payCount}`;
-        stampsHtml += `<div class="stamp free">${freeLabel}</div>`;
+        // Gratis-Stempel hinzufügen (nur wenn nicht stamps_only)
+        if (cardType.type !== 'stamps_only') {
+            const freeLabel = cardType.type === 'buy_n_get_1' ? 'GRATIS' : `+${cardType.getCount - cardType.payCount}`;
+            stampsHtml += `<div class="stamp free">${freeLabel}</div>`;
+        }
 
         const bindingLabel = cardType.bindingType === 'product'
             ? products.find(p => p.id === cardType.productId)?.name || cardType.productId
@@ -1969,6 +2017,11 @@ function removePersonLoyaltyCard(personId, cardId) {
 function getCategoryLabel(categoryId) {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.label : categoryId;
+}
+
+function getCategoryColor(categoryId) {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category?.color || '#3b82f6'; // Default: Blau
 }
 
 // ===========================
@@ -2649,26 +2702,30 @@ function renderDebtProducts() {
         });
     });
 
-    // Define category labels and order
-    const categoryLabels = {
-        drinks: 'Getränke',
-        alcohol: 'Alkoholische Getränke',
-        snacks: 'Snacks'
-    };
-
-    const categoryOrder = ['drinks', 'alcohol', 'snacks'];
+    // Build category labels and order from loaded categories
+    const categoryLabels = {};
+    const categoryOrder = [];
+    categories.forEach(cat => {
+        categoryLabels[cat.id] = cat.label;
+        categoryOrder.push(cat.id);
+    });
 
     // Render products by category
     categoryOrder.forEach(category => {
         if (groupedProducts[category] && groupedProducts[category].length > 0) {
+            const categoryColor = getCategoryColor(category);
+
             const header = document.createElement('div');
             header.className = 'category-header';
-            header.textContent = categoryLabels[category] || category;
+            header.style.borderLeftColor = categoryColor;
+            header.innerHTML = `<span class="category-color-indicator" style="background:${categoryColor}"></span>${categoryLabels[category] || category}`;
             grid.appendChild(header);
 
             groupedProducts[category].forEach(product => {
                 const btn = document.createElement('button');
-                btn.className = `product-btn ${product.category}`;
+                btn.className = 'product-btn';
+                btn.style.borderColor = categoryColor;
+                btn.style.background = `linear-gradient(135deg, ${categoryColor}15, #ffffff)`;
                 btn.innerHTML = `
                     <div class="product-name">${product.name}</div>
                     <div class="product-price">${formatPrice(product.price)}</div>
@@ -2682,14 +2739,19 @@ function renderDebtProducts() {
     // Render any products with unknown categories
     Object.keys(groupedProducts).forEach(category => {
         if (!categoryOrder.includes(category)) {
+            const categoryColor = getCategoryColor(category);
+
             const header = document.createElement('div');
             header.className = 'category-header';
-            header.textContent = category;
+            header.style.borderLeftColor = categoryColor;
+            header.innerHTML = `<span class="category-color-indicator" style="background:${categoryColor}"></span>${category}`;
             grid.appendChild(header);
 
             groupedProducts[category].forEach(product => {
                 const btn = document.createElement('button');
-                btn.className = `product-btn ${product.category}`;
+                btn.className = 'product-btn';
+                btn.style.borderColor = categoryColor;
+                btn.style.background = `linear-gradient(135deg, ${categoryColor}15, #ffffff)`;
                 btn.innerHTML = `
                     <div class="product-name">${product.name}</div>
                     <div class="product-price">${formatPrice(product.price)}</div>

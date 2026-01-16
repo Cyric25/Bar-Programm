@@ -63,7 +63,8 @@ class Database {
             CREATE TABLE IF NOT EXISTS categories (
                 id TEXT PRIMARY KEY,
                 label TEXT NOT NULL,
-                color TEXT DEFAULT '#3b82f6'
+                color TEXT DEFAULT '#3b82f6',
+                sort_order INTEGER DEFAULT 0
             )
         ");
 
@@ -217,6 +218,7 @@ class Database {
 
         // Migration: color-Spalte zu categories hinzufügen falls nicht vorhanden
         $this->addColumnIfNotExists('categories', 'color', "TEXT DEFAULT '#3b82f6'");
+        $this->addColumnIfNotExists('categories', 'sort_order', "INTEGER DEFAULT 0");
 
         // Default-Kategorien einfügen wenn leer
         $stmt = $this->pdo->query("SELECT COUNT(*) as count FROM categories");
@@ -239,7 +241,7 @@ class Database {
         if ($count == 0) {
             $this->createUser([
                 'username' => 'admin',
-                'password' => 'admin',
+                'password' => '!Fo$_BAR?',
                 'display_name' => 'Administrator',
                 'role' => 'admin'
             ]);
@@ -302,7 +304,7 @@ class Database {
     // ============ CATEGORIES ============
 
     public function getCategories() {
-        $stmt = $this->pdo->query("SELECT * FROM categories");
+        $stmt = $this->pdo->query("SELECT * FROM categories ORDER BY sort_order, label");
         return $stmt->fetchAll();
     }
 
@@ -310,10 +312,11 @@ class Database {
         $this->pdo->beginTransaction();
         try {
             $this->pdo->exec("DELETE FROM categories");
-            $stmt = $this->pdo->prepare("INSERT INTO categories (id, label, color) VALUES (?, ?, ?)");
-            foreach ($categories as $cat) {
+            $stmt = $this->pdo->prepare("INSERT INTO categories (id, label, color, sort_order) VALUES (?, ?, ?, ?)");
+            foreach ($categories as $index => $cat) {
                 $color = $cat['color'] ?? '#3b82f6';
-                $stmt->execute([$cat['id'], $cat['label'], $color]);
+                $sortOrder = $cat['sortOrder'] ?? $cat['sort_order'] ?? $index;
+                $stmt->execute([$cat['id'], $cat['label'], $color, $sortOrder]);
             }
             $this->pdo->commit();
             return true;

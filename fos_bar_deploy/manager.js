@@ -254,6 +254,39 @@ function initEventListeners() {
             renderPreordersList();
         });
     }
+
+    // Datenbank Tab Event Listeners
+    document.querySelectorAll('.db-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => showDbTable(btn.dataset.table));
+    });
+
+    const dbApplyFilterBtn = document.getElementById('btn-db-apply-filter');
+    if (dbApplyFilterBtn) {
+        dbApplyFilterBtn.addEventListener('click', applyDbFilters);
+    }
+
+    const dbResetFilterBtn = document.getElementById('btn-db-reset-filter');
+    if (dbResetFilterBtn) {
+        dbResetFilterBtn.addEventListener('click', resetDbFilters);
+    }
+
+    const dbExportCsvBtn = document.getElementById('btn-db-export-csv');
+    if (dbExportCsvBtn) {
+        dbExportCsvBtn.addEventListener('click', exportDbToCSV);
+    }
+
+    const dbExportExcelBtn = document.getElementById('btn-db-export-excel');
+    if (dbExportExcelBtn) {
+        dbExportExcelBtn.addEventListener('click', exportDbToExcel);
+    }
+
+    // Enter-Taste für Suchfeld
+    const dbSearchInput = document.getElementById('db-search');
+    if (dbSearchInput) {
+        dbSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyDbFilters();
+        });
+    }
 }
 
 async function handlePreorderSettingsSubmit(e) {
@@ -634,7 +667,7 @@ function handleLoyaltyFormSubmit(e) {
     };
 
     // Type-specific fields
-    if (type === 'buy_n_get_1') {
+    if (type === 'buy_n_get_1' || type === 'stamps_only') {
         cardTypeData.requiredPurchases = parseInt(formData.get('requiredPurchases'));
     } else if (type === 'pay_n_get_m') {
         cardTypeData.payCount = parseInt(formData.get('payCount'));
@@ -858,6 +891,8 @@ function renderLoyaltyCardTypes() {
         let typeLabel;
         if (cardType.type === 'buy_n_get_1') {
             typeLabel = `Kaufe ${cardType.requiredPurchases}, bekomme 1 gratis`;
+        } else if (cardType.type === 'stamps_only') {
+            typeLabel = `${cardType.requiredPurchases} Stempel sammeln (ohne Bonus)`;
         } else {
             typeLabel = `Zahle ${cardType.payCount}, bekomme ${cardType.getCount}`;
         }
@@ -890,10 +925,23 @@ function renderLoyaltyCardTypes() {
 function toggleLoyaltyTypeFields() {
     const type = document.getElementById('loyalty-type').value;
     const isBuyNGet1 = type === 'buy_n_get_1';
+    const isStampsOnly = type === 'stamps_only';
+    const isPayNGetM = type === 'pay_n_get_m';
 
-    document.getElementById('required-purchases-group').classList.toggle('hidden', !isBuyNGet1);
-    document.getElementById('pay-count-group').classList.toggle('hidden', isBuyNGet1);
-    document.getElementById('get-count-group').classList.toggle('hidden', isBuyNGet1);
+    // Show required purchases for buy_n_get_1 and stamps_only
+    document.getElementById('required-purchases-group').classList.toggle('hidden', isPayNGetM);
+    document.getElementById('pay-count-group').classList.toggle('hidden', !isPayNGetM);
+    document.getElementById('get-count-group').classList.toggle('hidden', !isPayNGetM);
+
+    // Update label based on type
+    const label = document.querySelector('#required-purchases-group label');
+    if (label) {
+        if (isStampsOnly) {
+            label.textContent = 'Anzahl Stempel auf Karte *';
+        } else {
+            label.textContent = 'Anzahl Käufe bis Gratis *';
+        }
+    }
 }
 
 function toggleBindingFields() {
@@ -949,10 +997,12 @@ function handleCategoryFormSubmit(e) {
     e.preventDefault();
 
     const formData = new FormData(e.target);
+    const sortOrderValue = formData.get('sortOrder');
     const categoryData = {
         id: formData.get('id').trim().toLowerCase(),
         label: formData.get('label').trim(),
-        color: formData.get('color') || '#3b82f6'
+        color: formData.get('color') || '#3b82f6',
+        sortOrder: sortOrderValue ? parseInt(sortOrderValue) : 0
     };
 
     // Validation
@@ -981,7 +1031,14 @@ function addCategory(categoryData) {
         return;
     }
 
+    // Set sortOrder to end if not specified
+    if (categoryData.sortOrder === 0 || categoryData.sortOrder === undefined) {
+        const maxOrder = Math.max(0, ...categories.map(c => c.sortOrder ?? c.sort_order ?? 0));
+        categoryData.sortOrder = maxOrder + 1;
+    }
+
     categories.push(categoryData);
+    categories.sort((a, b) => (a.sortOrder ?? a.sort_order ?? 0) - (b.sortOrder ?? b.sort_order ?? 0));
     saveCategories();
     renderCategories();
     renderCategorySelectors();
@@ -1001,8 +1058,12 @@ function updateCategory(categoryId, categoryData) {
     categories[index] = {
         id: categoryId,
         label: categoryData.label,
-        color: categoryData.color
+        color: categoryData.color,
+        sortOrder: categoryData.sortOrder ?? categories[index].sortOrder ?? 0
     };
+
+    // Re-sort categories by sortOrder
+    categories.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
     saveCategories();
     renderCategories();
@@ -1025,6 +1086,7 @@ function editCategory(categoryId) {
     document.getElementById('category-id').readOnly = true; // Can't change ID when editing
     document.getElementById('category-label').value = category.label;
     document.getElementById('category-color').value = category.color || '#3b82f6';
+    document.getElementById('category-sort-order').value = category.sortOrder ?? category.sort_order ?? 0;
 
     // Show form
     document.getElementById('category-form-wrapper').style.display = 'block';
@@ -1072,14 +1134,25 @@ function renderCategories() {
         return;
     }
 
-    const sorted = [...categories].sort((a, b) => a.label.localeCompare(b.label));
+    // Sort by sortOrder (already sorted from API, but ensure consistency)
+    const sorted = [...categories].sort((a, b) => {
+        const orderA = a.sortOrder ?? a.sort_order ?? 0;
+        const orderB = b.sortOrder ?? b.sort_order ?? 0;
+        return orderA - orderB;
+    });
 
-    container.innerHTML = sorted.map(category => {
+    container.innerHTML = sorted.map((category, index) => {
         const productCount = products.filter(p => p.category === category.id).length;
         const color = category.color || '#3b82f6';
+        const sortOrder = category.sortOrder ?? category.sort_order ?? 0;
 
         return `
             <div class="category-item" style="border-left: 4px solid ${color};">
+                <div class="category-sort-controls">
+                    <button class="btn-sort-up" onclick="moveCategoryUp('${category.id}')" ${index === 0 ? 'disabled' : ''} title="Nach oben">&#9650;</button>
+                    <span class="sort-order-number">${sortOrder}</span>
+                    <button class="btn-sort-down" onclick="moveCategoryDown('${category.id}')" ${index === sorted.length - 1 ? 'disabled' : ''} title="Nach unten">&#9660;</button>
+                </div>
                 <div class="category-info">
                     <div class="category-name">
                         <span class="category-color-dot" style="background: ${color};"></span>
@@ -1099,6 +1172,42 @@ function renderCategories() {
             </div>
         `;
     }).join('');
+}
+
+function moveCategoryUp(categoryId) {
+    const index = categories.findIndex(c => c.id === categoryId);
+    if (index <= 0) return;
+
+    // Swap sort orders
+    const currentOrder = categories[index].sortOrder ?? categories[index].sort_order ?? index;
+    const prevOrder = categories[index - 1].sortOrder ?? categories[index - 1].sort_order ?? (index - 1);
+
+    categories[index].sortOrder = prevOrder;
+    categories[index - 1].sortOrder = currentOrder;
+
+    // Re-sort and save
+    categories.sort((a, b) => (a.sortOrder ?? a.sort_order ?? 0) - (b.sortOrder ?? b.sort_order ?? 0));
+    saveCategories();
+    renderCategories();
+    showToast('Reihenfolge geändert');
+}
+
+function moveCategoryDown(categoryId) {
+    const index = categories.findIndex(c => c.id === categoryId);
+    if (index < 0 || index >= categories.length - 1) return;
+
+    // Swap sort orders
+    const currentOrder = categories[index].sortOrder ?? categories[index].sort_order ?? index;
+    const nextOrder = categories[index + 1].sortOrder ?? categories[index + 1].sort_order ?? (index + 1);
+
+    categories[index].sortOrder = nextOrder;
+    categories[index + 1].sortOrder = currentOrder;
+
+    // Re-sort and save
+    categories.sort((a, b) => (a.sortOrder ?? a.sort_order ?? 0) - (b.sortOrder ?? b.sort_order ?? 0));
+    saveCategories();
+    renderCategories();
+    showToast('Reihenfolge geändert');
 }
 
 function renderCategorySelectors() {
@@ -1186,6 +1295,8 @@ function switchTab(tabName) {
         renderManagerBenutzer();
     } else if (tabName === 'vorbestellung') {
         renderManagerVorbestellung();
+    } else if (tabName === 'datenbank') {
+        renderManagerDatenbank();
     }
 }
 
@@ -2414,6 +2525,359 @@ async function renderManagerVorbestellung() {
 }
 
 // ===========================
+// DATABASE VIEWER
+// ===========================
+
+let dbCurrentTable = 'sales';
+let dbAllData = {};
+let dbFilteredData = [];
+
+async function renderManagerDatenbank() {
+    console.log('Loading Datenbank data...');
+
+    // Lade alle Daten
+    await loadAllDatabaseData();
+
+    // Initialisiere Kategorie-Filter
+    populateDbCategoryFilter();
+
+    // Setze Standard-Datumswerte (letzte 30 Tage)
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const dateFrom = document.getElementById('db-date-from');
+    const dateTo = document.getElementById('db-date-to');
+    if (dateFrom) dateFrom.value = thirtyDaysAgo.toISOString().split('T')[0];
+    if (dateTo) dateTo.value = today.toISOString().split('T')[0];
+
+    // Zeige erste Tabelle
+    showDbTable('sales');
+}
+
+async function loadAllDatabaseData() {
+    try {
+        const [sales, products, cats, persons, debtors, inventory, preorders] = await Promise.all([
+            loadSalesData(),
+            apiGet('products'),
+            apiGet('categories'),
+            apiGet('persons'),
+            apiGet('debtors'),
+            loadInventoryData(),
+            apiGet('preorders').catch(() => [])
+        ]);
+
+        dbAllData = {
+            sales: sales || [],
+            products: products || [],
+            categories: cats || [],
+            persons: persons || [],
+            debtors: debtors || [],
+            inventory: inventory || [],
+            preorders: preorders || []
+        };
+
+        console.log('Datenbank geladen:', Object.keys(dbAllData).map(k => `${k}: ${dbAllData[k].length}`));
+    } catch (error) {
+        console.error('Fehler beim Laden der Datenbank:', error);
+        showToast('Fehler beim Laden der Daten', 'error');
+    }
+}
+
+function populateDbCategoryFilter() {
+    const filter = document.getElementById('db-category-filter');
+    if (!filter) return;
+
+    filter.innerHTML = '<option value="">Alle Kategorien</option>';
+    (dbAllData.categories || []).forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.textContent = cat.label;
+        filter.appendChild(option);
+    });
+}
+
+function showDbTable(tableName) {
+    dbCurrentTable = tableName;
+
+    // Update Tab-Buttons
+    document.querySelectorAll('.db-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.table === tableName);
+    });
+
+    // Update Tabellen-Name
+    const tableNames = {
+        sales: 'Verkäufe',
+        products: 'Produkte',
+        categories: 'Kategorien',
+        persons: 'Personen (Gutschriften)',
+        debtors: 'Schuldner',
+        inventory: 'Inventar',
+        preorders: 'Vorbestellungen'
+    };
+    document.getElementById('db-table-name').textContent = tableNames[tableName] || tableName;
+
+    // Daten filtern und anzeigen
+    applyDbFilters();
+}
+
+function applyDbFilters() {
+    const dateFrom = document.getElementById('db-date-from')?.value;
+    const dateTo = document.getElementById('db-date-to')?.value;
+    const categoryFilter = document.getElementById('db-category-filter')?.value;
+    const searchTerm = document.getElementById('db-search')?.value?.toLowerCase() || '';
+
+    let data = [...(dbAllData[dbCurrentTable] || [])];
+
+    // Datum-Filter (nur für Tabellen mit Zeitstempel)
+    if (dateFrom || dateTo) {
+        const fromDate = dateFrom ? new Date(dateFrom) : null;
+        const toDate = dateTo ? new Date(dateTo + 'T23:59:59') : null;
+
+        if (dbCurrentTable === 'sales') {
+            data = data.filter(item => {
+                const itemDate = new Date(item.timestamp);
+                if (fromDate && itemDate < fromDate) return false;
+                if (toDate && itemDate > toDate) return false;
+                return true;
+            });
+        } else if (dbCurrentTable === 'inventory') {
+            data = data.filter(item => {
+                const itemDate = new Date(item.date);
+                if (fromDate && itemDate < fromDate) return false;
+                if (toDate && itemDate > toDate) return false;
+                return true;
+            });
+        } else if (dbCurrentTable === 'preorders') {
+            data = data.filter(item => {
+                const itemDate = new Date(item.created_at);
+                if (fromDate && itemDate < fromDate) return false;
+                if (toDate && itemDate > toDate) return false;
+                return true;
+            });
+        }
+    }
+
+    // Kategorie-Filter
+    if (categoryFilter) {
+        if (dbCurrentTable === 'sales') {
+            const productsInCategory = (dbAllData.products || [])
+                .filter(p => p.category === categoryFilter)
+                .map(p => p.name);
+            data = data.filter(item => productsInCategory.includes(item.name));
+        } else if (dbCurrentTable === 'products') {
+            data = data.filter(item => item.category === categoryFilter);
+        }
+    }
+
+    // Such-Filter
+    if (searchTerm) {
+        data = data.filter(item => {
+            return Object.values(item).some(val =>
+                String(val).toLowerCase().includes(searchTerm)
+            );
+        });
+    }
+
+    dbFilteredData = data;
+    renderDbTable();
+}
+
+function renderDbTable() {
+    const thead = document.getElementById('db-table-head');
+    const tbody = document.getElementById('db-table-body');
+    const countEl = document.getElementById('db-record-count');
+
+    if (!thead || !tbody) return;
+
+    countEl.textContent = `${dbFilteredData.length} Einträge`;
+
+    if (dbFilteredData.length === 0) {
+        thead.innerHTML = '<tr><th>Keine Daten</th></tr>';
+        tbody.innerHTML = '<tr><td>Keine Einträge gefunden</td></tr>';
+        return;
+    }
+
+    // Spalten-Definitionen je Tabelle
+    const columnDefs = {
+        sales: [
+            { key: 'name', label: 'Produkt' },
+            { key: 'price', label: 'Preis', format: v => formatPrice(v) },
+            { key: 'timestamp', label: 'Zeitpunkt', format: v => new Date(v).toLocaleString('de-DE') },
+            { key: 'paymentMethod', label: 'Zahlung', format: v => v || 'bar' },
+            { key: 'personId', label: 'Person' }
+        ],
+        products: [
+            { key: 'name', label: 'Name' },
+            { key: 'price', label: 'Preis', format: v => formatPrice(v) },
+            { key: 'category', label: 'Kategorie', format: v => getCategoryLabel(v) },
+            { key: 'sortOrder', label: 'Sortierung' }
+        ],
+        categories: [
+            { key: 'id', label: 'ID' },
+            { key: 'label', label: 'Bezeichnung' },
+            { key: 'color', label: 'Farbe', format: v => `<span style="display:inline-block;width:20px;height:20px;background:${v || '#3b82f6'};border-radius:4px;"></span>` }
+        ],
+        persons: [
+            { key: 'id', label: 'ID' },
+            { key: 'name', label: 'Name' },
+            { key: 'balance', label: 'Guthaben', format: v => formatPrice(v) },
+            { key: 'loyaltyCards', label: 'Treuekarten', format: v => Array.isArray(v) ? v.length : 0 }
+        ],
+        debtors: [
+            { key: 'id', label: 'ID' },
+            { key: 'name', label: 'Name' },
+            { key: 'totalDebt', label: 'Schulden', format: v => formatPrice(v || 0) },
+            { key: 'settled', label: 'Beglichen', format: v => v ? 'Ja' : 'Nein' }
+        ],
+        inventory: [
+            { key: 'productId', label: 'Produkt-ID' },
+            { key: 'productName', label: 'Produkt', format: (v, item) => {
+                const prod = (dbAllData.products || []).find(p => p.id === item.productId);
+                return prod ? prod.name : item.productId;
+            }},
+            { key: 'quantity', label: 'Menge' },
+            { key: 'date', label: 'Datum' }
+        ],
+        preorders: [
+            { key: 'id', label: 'ID' },
+            { key: 'customer_name', label: 'Kunde' },
+            { key: 'total_price', label: 'Summe', format: v => formatPrice(v || 0) },
+            { key: 'status', label: 'Status' },
+            { key: 'created_at', label: 'Erstellt', format: v => new Date(v).toLocaleString('de-DE') }
+        ]
+    };
+
+    const columns = columnDefs[dbCurrentTable] || [{ key: 'id', label: 'ID' }];
+
+    // Header
+    thead.innerHTML = '<tr>' + columns.map(col => `<th>${col.label}</th>`).join('') + '</tr>';
+
+    // Body
+    tbody.innerHTML = dbFilteredData.map(item => {
+        return '<tr>' + columns.map(col => {
+            let value = item[col.key];
+            if (col.format) {
+                value = col.format(value, item);
+            }
+            return `<td>${value !== undefined && value !== null ? value : '-'}</td>`;
+        }).join('') + '</tr>';
+    }).join('');
+}
+
+function resetDbFilters() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    document.getElementById('db-date-from').value = thirtyDaysAgo.toISOString().split('T')[0];
+    document.getElementById('db-date-to').value = today.toISOString().split('T')[0];
+    document.getElementById('db-category-filter').value = '';
+    document.getElementById('db-search').value = '';
+
+    applyDbFilters();
+}
+
+function exportDbToCSV() {
+    if (dbFilteredData.length === 0) {
+        showToast('Keine Daten zum Exportieren', 'error');
+        return;
+    }
+
+    const columnDefs = {
+        sales: ['name', 'price', 'timestamp', 'paymentMethod', 'personId'],
+        products: ['id', 'name', 'price', 'category', 'sortOrder'],
+        categories: ['id', 'label', 'color'],
+        persons: ['id', 'name', 'balance'],
+        debtors: ['id', 'name', 'totalDebt', 'settled'],
+        inventory: ['productId', 'quantity', 'date'],
+        preorders: ['id', 'customer_name', 'total_price', 'status', 'created_at']
+    };
+
+    const columns = columnDefs[dbCurrentTable] || Object.keys(dbFilteredData[0]);
+
+    let csv = '\uFEFF'; // BOM for Excel
+    csv += columns.join(';') + '\n';
+
+    dbFilteredData.forEach(item => {
+        csv += columns.map(col => {
+            let val = item[col];
+            if (val === undefined || val === null) return '';
+            if (typeof val === 'string' && (val.includes(';') || val.includes('"'))) {
+                return '"' + val.replace(/"/g, '""') + '"';
+            }
+            return val;
+        }).join(';') + '\n';
+    });
+
+    const filename = `fos_bar_${dbCurrentTable}_${new Date().toISOString().split('T')[0]}.csv`;
+    downloadCSV(csv, filename);
+    showToast('CSV exportiert');
+}
+
+function exportDbToExcel() {
+    if (typeof XLSX === 'undefined') {
+        showToast('Excel-Bibliothek nicht geladen', 'error');
+        return;
+    }
+
+    if (dbFilteredData.length === 0) {
+        showToast('Keine Daten zum Exportieren', 'error');
+        return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(dbFilteredData);
+
+    const tableNames = {
+        sales: 'Verkäufe',
+        products: 'Produkte',
+        categories: 'Kategorien',
+        persons: 'Personen',
+        debtors: 'Schuldner',
+        inventory: 'Inventar',
+        preorders: 'Vorbestellungen'
+    };
+
+    XLSX.utils.book_append_sheet(wb, ws, tableNames[dbCurrentTable] || dbCurrentTable);
+
+    const filename = `fos_bar_${dbCurrentTable}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showToast('Excel exportiert');
+}
+
+function exportDbAllToExcel() {
+    if (typeof XLSX === 'undefined') {
+        showToast('Excel-Bibliothek nicht geladen', 'error');
+        return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    const tableNames = {
+        sales: 'Verkäufe',
+        products: 'Produkte',
+        categories: 'Kategorien',
+        persons: 'Personen',
+        debtors: 'Schuldner',
+        inventory: 'Inventar',
+        preorders: 'Vorbestellungen'
+    };
+
+    Object.keys(dbAllData).forEach(tableName => {
+        const data = dbAllData[tableName];
+        if (data && data.length > 0) {
+            const ws = XLSX.utils.json_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, tableNames[tableName] || tableName);
+        }
+    });
+
+    const filename = `fos_bar_komplett_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showToast('Komplette Datenbank exportiert');
+}
+
+// ===========================
 // EXPOSE FOR INLINE HANDLERS
 // ===========================
 
@@ -2424,8 +2888,16 @@ window.deleteLoyaltyCardType = deleteLoyaltyCardType;
 window.toggleLoyaltyCardTypeActive = toggleLoyaltyCardTypeActive;
 window.editCategory = editCategory;
 window.deleteCategory = deleteCategory;
+window.moveCategoryUp = moveCategoryUp;
+window.moveCategoryDown = moveCategoryDown;
 window.editUser = editUser;
 window.deleteUser = deleteUser;
 window.togglePreorderProduct = togglePreorderProduct;
 window.updatePreorderMaxQty = updatePreorderMaxQty;
 window.updatePreorderStatus = updatePreorderStatus;
+window.showDbTable = showDbTable;
+window.applyDbFilters = applyDbFilters;
+window.resetDbFilters = resetDbFilters;
+window.exportDbToCSV = exportDbToCSV;
+window.exportDbToExcel = exportDbToExcel;
+window.exportDbAllToExcel = exportDbAllToExcel;

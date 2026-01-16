@@ -158,10 +158,22 @@ header h1 {
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
-    padding: 0.4rem 0 0.3rem 0;
+    padding: 0.4rem 0 0.3rem 0.5rem;
     border-bottom: 2px solid var(--border-color);
+    border-left: 4px solid var(--primary-color);
     margin-top: 0.3rem;
     margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.category-color-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
 }
 
 .product-btn {

@@ -30,7 +30,7 @@ session_start();
 // ============================================
 // PASSWORT HIER ÄNDERN!
 // ============================================
-define('APP_PASSWORD', 'fosbar2024');
+define('APP_PASSWORD', '!Fo$_BAR?');
 
 // Datenbank-Pfad
 define('DB_PATH', __DIR__ . '/db/fos_bar.sqlite');
