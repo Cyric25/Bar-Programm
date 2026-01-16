@@ -33,6 +33,21 @@ class Database {
         return $this->pdo;
     }
 
+    private function addColumnIfNotExists($table, $column, $definition) {
+        $stmt = $this->pdo->query("PRAGMA table_info($table)");
+        $columns = $stmt->fetchAll();
+        $columnExists = false;
+        foreach ($columns as $col) {
+            if ($col['name'] === $column) {
+                $columnExists = true;
+                break;
+            }
+        }
+        if (!$columnExists) {
+            $this->pdo->exec("ALTER TABLE $table ADD COLUMN $column $definition");
+        }
+    }
+
     private function initTables() {
         $this->pdo->exec("
             CREATE TABLE IF NOT EXISTS products (
@@ -199,6 +214,9 @@ class Database {
                 max_quantity INTEGER DEFAULT 10
             )
         ");
+
+        // Migration: color-Spalte zu categories hinzufügen falls nicht vorhanden
+        $this->addColumnIfNotExists('categories', 'color', "TEXT DEFAULT '#3b82f6'");
 
         // Default-Kategorien einfügen wenn leer
         $stmt = $this->pdo->query("SELECT COUNT(*) as count FROM categories");
