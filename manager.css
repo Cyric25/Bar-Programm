@@ -6,15 +6,17 @@
 }
 
 :root {
-    --primary-color: #2563eb;
-    --secondary-color: #10b981;
+    --primary-color: #e24614;
+    --primary-dark: #c93d12;
+    --accent-color: #71230a;
+    --secondary-color: #c93d12;
     --danger-color: #ef4444;
     --warning-color: #f59e0b;
-    --bg-color: #f8fafc;
+    --bg-color: #f8f9fa;
     --card-bg: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --border-color: #e2e8f0;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --border-color: #f5ede9;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
@@ -37,7 +39,7 @@ body {
 
 /* === HEADER === */
 header {
-    background: linear-gradient(135deg, var(--secondary-color), #059669);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
     padding: 1.5rem;
     box-shadow: var(--shadow-lg);
@@ -355,7 +357,7 @@ header h1 {
 }
 
 .btn-import:hover {
-    background: #059669;
+    background: var(--primary-dark);
 }
 
 /* === CATEGORY FILTER === */
@@ -718,7 +720,7 @@ header h1 {
 
 .loyalty-card-binding {
     display: inline-block;
-    background: linear-gradient(135deg, var(--secondary-color), #059669);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
     padding: 0.25rem 0.75rem;
     border-radius: 12px;

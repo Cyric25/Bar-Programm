@@ -2611,7 +2611,7 @@ function renderDebtorsGrid() {
         const isSelected = selectedDebtorId === debtor.id;
 
         return `
-            <div class="person-card-credits debt-card ${debtClass} ${isSelected ? 'selected' : ''}"
+            <div class="person-card-debt ${debtClass} ${isSelected ? 'selected' : ''}"
                  onclick="selectDebtorById('${debtor.id}')">
                 <div class="person-info">
                     <div class="person-name">${escapeHtml(debtor.name)}</div>
