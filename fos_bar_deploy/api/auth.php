@@ -42,6 +42,24 @@ function requireAuth() {
 }
 
 /**
+ * Gleicht Rolle und Aktiv-Status der Session mit der Datenbank ab,
+ * damit Rollenänderungen sofort wirken (nicht erst nach neuem Login)
+ */
+function refreshSessionUser($db) {
+    if (!isAuthenticated() || empty($_SESSION['user_id'])) return;
+
+    $user = $db->getUserById($_SESSION['user_id']);
+    if (!$user || !$user['is_active']) {
+        logout();
+        http_response_code(401);
+        echo json_encode(['error' => 'Nicht autorisiert', 'redirect' => 'login.php']);
+        exit();
+    }
+    $_SESSION['role'] = $user['role'];
+    $_SESSION['display_name'] = $user['display_name'];
+}
+
+/**
  * Prüft Admin-Rechte
  */
 function requireAdmin() {

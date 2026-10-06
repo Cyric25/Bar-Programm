@@ -65,6 +65,7 @@ try {
 
     // Aktueller Benutzer (ohne Auth - gibt null zurück wenn nicht eingeloggt)
     if ($action === 'me') {
+        refreshSessionUser($db);
         $user = getCurrentUser();
         jsonResponse(['user' => $user, 'authenticated' => $user !== null]);
         exit();
@@ -129,6 +130,7 @@ try {
 
     // Alle anderen Aktionen brauchen Auth
     requireAuth();
+    refreshSessionUser($db);
 
     switch ($action) {
         // ============ PRODUCTS ============

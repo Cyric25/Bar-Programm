@@ -36,6 +36,7 @@ function parseEuro(value) {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Manager.js loaded!');
     try {
+        await applyRolePermissions();
         await loadCategories();
         await loadProducts();
         await loadLoyaltyCardTypes();
@@ -50,6 +51,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         showToast('Fehler beim Laden der Daten. Ist der Server erreichbar?', 'error');
     }
 });
+
+// Blendet Admin-Bereiche (Benutzerverwaltung) für Mitarbeiter aus
+async function applyRolePermissions() {
+    let isAdmin = false;
+    try {
+        const result = await apiGet('me');
+        isAdmin = result.user?.role === 'admin';
+    } catch (error) {
+        console.error('Fehler beim Laden des Benutzers:', error);
+    }
+    if (isAdmin) return;
+
+    const userTabBtn = document.querySelector('.tab-btn[data-tab="benutzer"]');
+    const userTab = document.getElementById('benutzer-tab');
+    if (userTabBtn) userTabBtn.remove();
+    if (userTab) userTab.remove();
+}
 
 // ===========================
 // DATA LOADING & SAVING (via API)
